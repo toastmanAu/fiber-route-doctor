@@ -1,0 +1,9 @@
+{
+  "name": "@fiber-route-doctor/cli",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": { "fiber-route-doctor": "./src/main.ts" },
+  "dependencies": { "@fiber-route-doctor/core": "0.1.0" },
+  "scripts": { "start": "tsx src/main.ts" },
+  "license": "MIT"
+}
