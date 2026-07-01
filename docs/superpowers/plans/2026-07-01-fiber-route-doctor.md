@@ -687,14 +687,15 @@ function chan(op: string, a: string, b: string, fee: string): RpcChannelInfo {
   return { channel_outpoint: op, node1: a, node2: b, capacity: "0xf4240", funding_udt_type_script: null, update_info_of_node1: u, update_info_of_node2: u };
 }
 const probe: ProbeRequest = { source: "0xA", target: "0xC", amount: 1000n, asset: CKB_ASSET };
-const model = GraphModel.fromRpc([], [chan("0x1", "0xA", "0xB", "0xa"), chan("0x2", "0xB", "0xC", "0xa")]);
+// fee_rate 0x1 (1/thousand) keeps a 2-hop route's total fee (2) within the default 0.5% ceiling (5) so it stays payable
+const model = GraphModel.fromRpc([], [chan("0x1", "0xA", "0xB", "0x1"), chan("0x2", "0xB", "0xC", "0x1")]);
 
 describe("diagnose — found path", () => {
   it("returns payable with the path and totals when fee is within ceiling and router is skipped", () => {
     const r = diagnose(model, probe, { kind: "skipped" });
     expect(r.verdict).toBe("payable");
     expect(r.path.map(h => h.to)).toEqual(["0xB", "0xC"]);
-    expect(r.totalFee).toBe(20n);
+    expect(r.totalFee).toBe(2n);
     expect(r.reasons).toEqual([]);
     expect(r.routerConfirmed).toBe(false);
   });
@@ -1227,8 +1228,8 @@ function client(nodes: unknown, channels: unknown) {
 }
 const probe: ProbeRequest = { source: "0xA", target: "0xC", amount: 1000n, asset: CKB_ASSET };
 const chans = [
-  { channel_outpoint: "0x1", node1: "0xA", node2: "0xB", capacity: "0xf4240", funding_udt_type_script: null, update_info_of_node1: { timestamp: "0x1", enabled: true, fee_rate: "0xa", tlc_expiry_delta: "0x3e8", tlc_minimum_value: "0x1" }, update_info_of_node2: null },
-  { channel_outpoint: "0x2", node1: "0xB", node2: "0xC", capacity: "0xf4240", funding_udt_type_script: null, update_info_of_node1: { timestamp: "0x1", enabled: true, fee_rate: "0xa", tlc_expiry_delta: "0x3e8", tlc_minimum_value: "0x1" }, update_info_of_node2: null }
+  { channel_outpoint: "0x1", node1: "0xA", node2: "0xB", capacity: "0xf4240", funding_udt_type_script: null, update_info_of_node1: { timestamp: "0x1", enabled: true, fee_rate: "0x1", tlc_expiry_delta: "0x3e8", tlc_minimum_value: "0x1" }, update_info_of_node2: null },
+  { channel_outpoint: "0x2", node1: "0xB", node2: "0xC", capacity: "0xf4240", funding_udt_type_script: null, update_info_of_node1: { timestamp: "0x1", enabled: true, fee_rate: "0x1", tlc_expiry_delta: "0x3e8", tlc_minimum_value: "0x1" }, update_info_of_node2: null }
 ];
 
 describe("orchestrator", () => {
