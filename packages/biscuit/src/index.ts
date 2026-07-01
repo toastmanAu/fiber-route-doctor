@@ -6,3 +6,4 @@ export * from "./mint.js";
 export * from "./authorize.js";
 export * from "./keystore.js";
 export * from "./keystore-backend.js";
+export * from "./token-store.js";
