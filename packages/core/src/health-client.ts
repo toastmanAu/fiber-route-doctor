@@ -1,5 +1,5 @@
-import { GraphClient } from "./graph-client.js";
-import type { RpcChannel, RpcNodeInfo, RpcPeerInfo } from "./health-types.js";
+import { GraphClient, RpcMethodError } from "./graph-client.js";
+import type { RpcChannel, RpcNodeInfo, RpcPeerInfo, HealthSnapshot, RpcOutcome } from "./health-types.js";
 
 export class HealthClient extends GraphClient {
   async nodeInfo(): Promise<RpcNodeInfo> {
@@ -11,4 +11,28 @@ export class HealthClient extends GraphClient {
   async listChannels(): Promise<RpcChannel[]> {
     return (await this.call<{ channels: RpcChannel[] }>("list_channels", [{}])).channels;
   }
+}
+
+const UNAUTHORIZED_CODE = -32999; // fnn BiscuitAuthMiddleware auth_reject_error()
+
+function classifyFailure(e: unknown): RpcOutcome {
+  if (e instanceof RpcMethodError && e.code === UNAUTHORIZED_CODE) {
+    return { ok: false, kind: "auth-denied", detail: e.message };
+  }
+  return { ok: false, kind: "transport-error", detail: e instanceof Error ? e.message : String(e) };
+}
+
+/** Runs all three health RPCs, capturing each failure independently — never rejects for call failures. */
+export async function collectHealthSnapshot(client: HealthClient): Promise<HealthSnapshot> {
+  const [ni, pe, ch] = await Promise.allSettled([client.nodeInfo(), client.listPeers(), client.listChannels()]);
+  return {
+    nodeInfo: ni.status === "fulfilled" ? ni.value : undefined,
+    peers: pe.status === "fulfilled" ? pe.value : undefined,
+    channels: ch.status === "fulfilled" ? ch.value : undefined,
+    outcomes: {
+      nodeInfo: ni.status === "fulfilled" ? { ok: true } : classifyFailure(ni.reason),
+      listPeers: pe.status === "fulfilled" ? { ok: true } : classifyFailure(pe.reason),
+      listChannels: ch.status === "fulfilled" ? { ok: true } : classifyFailure(ch.reason)
+    }
+  };
 }
