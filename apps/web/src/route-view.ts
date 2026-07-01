@@ -80,9 +80,6 @@ export function buildRouteView(report: RouteReport): RouteView {
     });
   }
 
-  // Last node is always target
-  nodes[nodes.length - 1].role = "target";
-
   // Build edges
   const edges: RouteViewEdge[] = report.path.map((hop) => ({
     from: hop.from,

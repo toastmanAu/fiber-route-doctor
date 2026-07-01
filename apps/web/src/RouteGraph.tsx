@@ -116,8 +116,8 @@ export function RouteGraph({ view }: RouteGraphProps) {
             background: "#fff3cd",
             border: `1px solid ${view.color}`,
             borderRadius: "4px",
-            fontSize: "13",
-            color: "#333",
+            fontSize: "13px",
+            color: view.color,
           }}
         >
           {view.reasons.map((reason, i) => (
