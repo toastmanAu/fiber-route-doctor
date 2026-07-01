@@ -17,6 +17,7 @@
 - The `diagnose()` function and everything it calls MUST be pure and synchronous (no network, no `Date.now()` in logic paths that affect output). All network access lives in `GraphClient` / `RouteProbe`.
 - Immutability: model and report objects are treated as read-only; never mutate inputs.
 - Package/workspace names: `@fiber-route-doctor/core`, `@fiber-route-doctor/cli`, `@fiber-route-doctor/web`.
+- **Type-check gate:** Vitest uses esbuild (strips types, does NOT type-check). Every task's verification MUST run `npm run typecheck` (tsc --noEmit) in addition to `npm test`; both must pass before commit.
 
 ---
 
@@ -772,7 +773,7 @@ export function diagnose(model: GraphModel, probe: ProbeRequest, probeResult: Pr
   return { verdict: "blocked", probe, path: [], totalFee: 0n, totalExpiry: 0n, reasons: [], fixes: [], routerConfirmed: false };
 }
 
-function sameChannels(a: string[], b: string[]): boolean {
+function sameChannels(a: readonly string[], b: readonly string[]): boolean {
   if (a.length !== b.length) return false;
   return a.every((x, i) => x === b[i]);
 }
