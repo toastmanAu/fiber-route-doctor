@@ -1,4 +1,5 @@
 import { findBestPath } from "./find-path.js";
+import { attributeBlock } from "./attribute.js";
 import type { GraphModel } from "./graph-model.js";
 import type { ProbeRequest, ProbeResult, Reason, RouteReport } from "./types.js";
 
@@ -40,8 +41,8 @@ export function diagnose(model: GraphModel, probe: ProbeRequest, probeResult: Pr
     };
   }
 
-  // Blocked branch — replaced with real attribution in Task 6.
-  return { verdict: "blocked", probe, path: [], totalFee: 0n, totalExpiry: 0n, reasons: [], fixes: [], routerConfirmed: false };
+  const { reasons, fixes } = attributeBlock(model, probe);
+  return { verdict: "blocked", probe, path: [], totalFee: 0n, totalExpiry: 0n, reasons, fixes, routerConfirmed: false };
 }
 
 function sameChannels(a: readonly string[], b: readonly string[]): boolean {
