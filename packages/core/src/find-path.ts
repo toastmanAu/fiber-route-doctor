@@ -4,7 +4,7 @@ import type { GraphModel } from "./graph-model.js";
 export interface PathResult { hops: ReportHop[]; totalFee: bigint; totalExpiry: bigint; }
 
 export function hopFee(amount: bigint, feeRate: bigint): bigint {
-  return (amount * feeRate) / 1000n; // per-thousand, matching Fiber max_fee_rate semantics
+  return (amount * feeRate) / 1_000_000n; // fee rate is parts-per-million (Fiber tlc_fee_proportional_millionths)
 }
 
 export function edgeUsable(edge: DirectedEdge, probe: ProbeRequest): boolean {

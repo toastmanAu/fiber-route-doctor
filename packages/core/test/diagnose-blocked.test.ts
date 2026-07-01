@@ -4,12 +4,12 @@ import { GraphModel, diagnose, CKB_ASSET, type ProbeRequest, type RpcChannelInfo
 function chan(op: string, a: string, b: string, o: Partial<{ enabled: boolean; cap: string; min: string; udt: boolean }> = {}): RpcChannelInfo {
   const u = { timestamp: "0x1", enabled: o.enabled ?? true, fee_rate: "0xa", tlc_expiry_delta: "0x3e8", tlc_minimum_value: o.min ?? "0x1" };
   return {
-    channel_outpoint: op, node1: a, node2: b, capacity: o.cap ?? "0xf4240",
+    channel_outpoint: op, node1: a, node2: b, capacity: o.cap ?? "0x3b9aca00",
     funding_udt_type_script: o.udt ? { code_hash: "0x11", hash_type: "type", args: "0x22" } : null,
     update_info_of_node1: u, update_info_of_node2: u
   };
 }
-const probe: ProbeRequest = { source: "0xA", target: "0xC", amount: 1000n, asset: CKB_ASSET };
+const probe: ProbeRequest = { source: "0xA", target: "0xC", amount: 1_000_000n, asset: CKB_ASSET };
 
 describe("diagnose — blocked attribution", () => {
   it("reports target_absent when target has no presence", () => {

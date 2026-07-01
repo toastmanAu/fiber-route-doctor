@@ -6,7 +6,7 @@ import type { ProbeRequest, ProbeResult, Reason, RouteReport } from "./types.js"
 const DEFAULT_MAX_FEE_RATE = 5n; // per-thousand (0.5%)
 
 function feeWithinCeiling(totalFee: bigint, amount: bigint, maxFeeRate: bigint): boolean {
-  // ceiling amount = amount * maxFeeRate / 1000
+  // max_fee_rate is per-thousand (0.5% default); channel fee rates are ppm — different scales, intentional
   return totalFee <= (amount * maxFeeRate) / 1000n;
 }
 
