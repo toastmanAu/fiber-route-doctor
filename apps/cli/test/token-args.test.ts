@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseExpiry } from "../src/commands/token.js";
+import { parseExpiry, parseScope } from "../src/commands/token.js";
 
 describe("parseExpiry", () => {
   it("parses days and hours into a future Date", () => {
@@ -9,5 +9,16 @@ describe("parseExpiry", () => {
   });
   it("throws on a bad format", () => {
     expect(() => parseExpiry("soon")).toThrow(/expiry/);
+  });
+});
+
+describe("parseScope", () => {
+  it("accepts the three templates", () => {
+    expect(parseScope("readonly")).toBe("readonly");
+    expect(parseScope("invoicing")).toBe("invoicing");
+    expect(parseScope("full")).toBe("full");
+  });
+  it("throws on an invalid scope", () => {
+    expect(() => parseScope("bogus")).toThrow(/scope/);
   });
 });

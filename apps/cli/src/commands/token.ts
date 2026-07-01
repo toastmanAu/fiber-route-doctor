@@ -18,6 +18,13 @@ export function parseExpiry(s: string): Date {
   return new Date(Date.now() + ms);
 }
 
+const SCOPES: ScopeTemplate[] = ["readonly", "invoicing", "full"];
+
+export function parseScope(s: string): ScopeTemplate {
+  if ((SCOPES as string[]).includes(s)) return s as ScopeTemplate;
+  throw new Error(`--scope must be one of: ${SCOPES.join(", ")}`);
+}
+
 function flags(rest: string[]): Map<string, string> {
   const f = new Map<string, string>();
   for (let i = 0; i < rest.length; i++) {
@@ -39,8 +46,15 @@ export async function runToken(rest: string[]): Promise<number> {
   const store = new NodeFsTokenStore(PROFILES);
   if (sub === "generate") {
     const pass = f.get("passphrase") ?? process.env.FRD_PASSPHRASE ?? "";
+    if (!pass) { console.error("--passphrase (or FRD_PASSPHRASE) required"); return 1; }
+    let scope: ScopeTemplate;
+    try {
+      scope = parseScope(f.get("scope") ?? "readonly");
+    } catch (e) {
+      console.error(e instanceof Error ? e.message : String(e));
+      return 1;
+    }
     const key = unlockKey(pass);
-    const scope = (f.get("scope") ?? "readonly") as ScopeTemplate;
     const expiry = parseExpiry(f.get("expiry") ?? "30d");
     const token = mintToken({ privateKeyString: key.privateKeyString, facts: scopeFacts(scope), expiry });
     const name = f.get("profile");
