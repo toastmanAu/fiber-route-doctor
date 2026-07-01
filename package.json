@@ -15,7 +15,11 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc -p packages/core/tsconfig.json --noEmit"
+    "typecheck:core": "tsc -p packages/core/tsconfig.json --noEmit",
+    "typecheck:cli": "tsc -p apps/cli/tsconfig.json --noEmit",
+    "typecheck:web": "tsc -p apps/web/tsconfig.json --noEmit",
+    "typecheck": "npm run typecheck:core && npm run typecheck:cli && npm run typecheck:web",
+    "smoke:live": "node --import tsx scripts/live-smoke.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.1.0",
