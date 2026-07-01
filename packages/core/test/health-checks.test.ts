@@ -76,3 +76,49 @@ describe("checkPeers", () => {
     expect(checkPeers(snap({ nodeInfo: OK, listPeers: DENIED, listChannels: OK })).status).toBe("skip");
   });
 });
+
+import { checkChannels, type RpcChannel } from "../src/index.js";
+
+function chan(over: Partial<RpcChannel> = {}): RpcChannel {
+  return {
+    channel_id: "0x" + "ab".repeat(32), state: { state_name: "ChannelReady" },
+    local_balance: "0x3e8", remote_balance: "0x3e8", offered_tlc_balance: "0x0", received_tlc_balance: "0x0",
+    enabled: true, is_public: true, pending_tlcs: [], created_at: "0x1",
+    funding_udt_type_script: null, failure_detail: null, ...over
+  };
+}
+const ALL_OK = { nodeInfo: OK, listPeers: OK, listChannels: OK };
+
+describe("checkChannels", () => {
+  it("passes with count and local balance when all channels are healthy", () => {
+    const r = checkChannels(snap(ALL_OK, { channels: [chan(), chan()] }));
+    expect(r.status).toBe("pass");
+    expect(r.reason).toContain("2 channel(s) ready");
+    expect(r.reason).toContain("2000");
+  });
+  it("warns when there are no channels at all", () => {
+    const r = checkChannels(snap(ALL_OK, { channels: [] }));
+    expect(r.status).toBe("warn");
+    expect(r.reason).toContain("no channels");
+  });
+  it("warns on non-ready channels including failure_detail", () => {
+    const r = checkChannels(snap(ALL_OK, { channels: [chan({ state: { state_name: "AwaitingChannelReady" }, failure_detail: "funding tx unconfirmed" })] }));
+    expect(r.status).toBe("warn");
+    expect(r.reason).toContain("AwaitingChannelReady");
+    expect(r.reason).toContain("funding tx unconfirmed");
+  });
+  it("warns on disabled channels and pending TLCs", () => {
+    const r = checkChannels(snap(ALL_OK, { channels: [chan({ enabled: false }), chan({ pending_tlcs: [{}, {}] })] }));
+    expect(r.status).toBe("warn");
+    expect(r.reason).toContain("disabled");
+    expect(r.reason).toContain("2 pending TLC(s)");
+  });
+  it("warns on zero outbound liquidity across ready channels", () => {
+    const r = checkChannels(snap(ALL_OK, { channels: [chan({ local_balance: "0x0" })] }));
+    expect(r.status).toBe("warn");
+    expect(r.reason).toContain("zero outbound liquidity");
+  });
+  it("skips when list_channels failed", () => {
+    expect(checkChannels(snap({ nodeInfo: OK, listPeers: OK, listChannels: DENIED })).status).toBe("skip");
+  });
+});

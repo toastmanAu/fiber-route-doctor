@@ -54,3 +54,32 @@ export function checkPeers(s: HealthSnapshot): CheckResult {
   }
   return { id, title, status: "pass", reason: `${s.peers.length} peer(s) connected` };
 }
+
+const shortId = (h: string): string => `${h.slice(0, 10)}…`;
+
+export function checkChannels(s: HealthSnapshot): CheckResult {
+  const id = "channels", title = "Channel health";
+  if (!s.channels) return { id, title, status: "skip", reason: skipReason(s.outcomes.listChannels) };
+  if (s.channels.length === 0) {
+    return { id, title, status: "warn", reason: "no channels — node has no liquidity", fix: "open a channel to a well-connected peer" };
+  }
+  const issues: string[] = [];
+  const fixes: string[] = [];
+  const notReady = s.channels.filter((c) => c.state.state_name !== "ChannelReady");
+  for (const c of notReady) issues.push(`${shortId(c.channel_id)} in ${c.state.state_name}${c.failure_detail ? ` (${c.failure_detail})` : ""}`);
+  if (notReady.length) fixes.push("wait for funding confirmation or investigate failure_detail");
+  const disabled = s.channels.filter((c) => c.state.state_name === "ChannelReady" && !c.enabled);
+  for (const c of disabled) issues.push(`${shortId(c.channel_id)} disabled`);
+  if (disabled.length) fixes.push("re-enable via update_channel");
+  const stuck = s.channels.filter((c) => c.pending_tlcs.length > 0);
+  for (const c of stuck) issues.push(`${shortId(c.channel_id)} has ${c.pending_tlcs.length} pending TLC(s)`);
+  if (stuck.length) fixes.push("pending TLCs may be in-flight payments; investigate if persistent");
+  const ready = s.channels.filter((c) => c.state.state_name === "ChannelReady");
+  const localTotal = ready.reduce((acc, c) => acc + BigInt(c.local_balance), 0n);
+  if (ready.length > 0 && localTotal === 0n) {
+    issues.push("zero outbound liquidity — cannot send");
+    fixes.push("rebalance or fund a channel from this side");
+  }
+  if (issues.length) return { id, title, status: "warn", reason: issues.join("; "), fix: fixes.join("; ") };
+  return { id, title, status: "pass", reason: `${ready.length} channel(s) ready, local balance ${localTotal} (smallest unit)` };
+}
