@@ -1,0 +1,30 @@
+{
+  "name": "fiber-route-doctor",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=22",
+    "npm": ">=11"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck:core": "tsc -p packages/core/tsconfig.json --noEmit",
+    "typecheck:cli": "tsc -p apps/cli/tsconfig.json --noEmit",
+    "typecheck:web": "tsc -p apps/web/tsconfig.json --noEmit",
+    "typecheck": "npm run typecheck:core && npm run typecheck:cli && npm run typecheck:web",
+    "smoke:live": "node --import tsx scripts/live-smoke.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}
