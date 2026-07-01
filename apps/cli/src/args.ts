@@ -2,6 +2,7 @@ import { CKB_ASSET, type AssetId } from "@fiber-route-doctor/core";
 
 export interface CliArgs {
   url: string; source: string; target: string; amount: bigint; asset: AssetId; biscuit?: string; router: boolean;
+  profile?: string; authTokenFile?: string;
 }
 
 export function parseArgs(argv: string[]): CliArgs {
@@ -24,6 +25,8 @@ export function parseArgs(argv: string[]): CliArgs {
     amount: BigInt(req("amount")),
     asset: (flags.get("asset") as AssetId | undefined) ?? CKB_ASSET,
     biscuit: flags.get("biscuit"),
-    router: bools.has("router")
+    router: bools.has("router"),
+    profile: flags.get("profile"),
+    authTokenFile: flags.get("auth-token-file")
   };
 }

@@ -1,5 +1,9 @@
 #!/usr/bin/env tsx
+import { readFileSync } from "node:fs";
+import { homedir } from "node:os";
+import { join } from "node:path";
 import { GraphClient, loadGraph, runDiagnosis, formatReportText, type ProbeRequest } from "@fiber-route-doctor/core";
+import { resolveToken, NodeFsTokenStore } from "@fiber-route-doctor/biscuit";
 import { parseArgs } from "./args.js";
 import { parseCommand } from "./dispatch.js";
 import { runKeys } from "./commands/keys.js";
@@ -12,7 +16,16 @@ async function main() {
   if (command === "token") process.exit(await runToken(rest));
 
   const args = parseArgs(rest);
-  const client = new GraphClient({ url: args.url, biscuit: args.biscuit });
+  const PROFILES = join(homedir(), ".config", "fiber-route-doctor", "profiles.json");
+  const token = resolveToken({
+    authToken: args.biscuit,
+    authTokenFile: args.authTokenFile,
+    profile: args.profile,
+    env: process.env,
+    getProfileToken: (n) => new NodeFsTokenStore(PROFILES).get(n)?.token,
+    readFile: (p) => readFileSync(p, "utf8")
+  });
+  const client = new GraphClient({ url: args.url, biscuit: token });
   const model = await loadGraph(client);
   const probe: ProbeRequest = { source: args.source, target: args.target, amount: args.amount, asset: args.asset };
   const router = args.router ? makeRouter(args.url, args.biscuit) : undefined;

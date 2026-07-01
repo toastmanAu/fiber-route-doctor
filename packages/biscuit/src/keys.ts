@@ -25,7 +25,9 @@ export function deriveFromMnemonic(mnemonic: string): BiscuitKey {
 }
 
 export function importPrivateKeyString(raw: string): BiscuitKey {
-  const m = raw.trim().match(/^ed25519-private\/([0-9a-fA-F]{64})$/);
-  if (!m) throw new Error("expected an 'ed25519-private/<64 hex>' key string");
-  return fromPrivateBytes(hexToBytes(m[1]));
+  const hex = raw.trim().replace(/^ed25519-private\//, "");
+  if (!/^[0-9a-fA-F]{64}$/.test(hex)) {
+    throw new Error("expected an Ed25519 private key: 'ed25519-private/<64 hex>' or bare 64-hex");
+  }
+  return fromPrivateBytes(hexToBytes(hex));
 }

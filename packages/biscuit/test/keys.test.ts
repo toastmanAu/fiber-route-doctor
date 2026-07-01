@@ -26,4 +26,9 @@ describe("keys", () => {
   it("rejects a malformed private key string", () => {
     expect(() => importPrivateKeyString("deadbeef")).toThrow(/ed25519-private/);
   });
+  it("imports a bare 64-hex private key (no prefix) identically to the prefixed form", () => {
+    const derived = deriveFromMnemonic(FIXED);
+    const bareHex = derived.privateKeyString.replace(/^ed25519-private\//, "");
+    expect(importPrivateKeyString(bareHex).publicKeyString).toBe(derived.publicKeyString);
+  });
 });
