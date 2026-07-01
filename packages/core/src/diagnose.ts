@@ -2,7 +2,7 @@ import { findBestPath } from "./find-path.js";
 import type { GraphModel } from "./graph-model.js";
 import type { ProbeRequest, ProbeResult, Reason, RouteReport } from "./types.js";
 
-const DEFAULT_MAX_FEE_RATE = 20n; // per-thousand (2%)
+const DEFAULT_MAX_FEE_RATE = 5n; // per-thousand (0.5%)
 
 function feeWithinCeiling(totalFee: bigint, amount: bigint, maxFeeRate: bigint): boolean {
   // ceiling amount = amount * maxFeeRate / 1000
