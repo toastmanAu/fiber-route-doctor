@@ -13,4 +13,13 @@ describe("keystore", () => {
     const ks = encryptSecret("s", "right", "privatekey", "ed25519/x");
     expect(() => decryptSecret(ks, "wrong")).toThrow();
   });
+  it("rejects a keystore with out-of-bounds scrypt N before running scrypt", () => {
+    const ks = encryptSecret("s", "pass", "privatekey", "ed25519/x");
+    const tampered = { ...ks, N: 2 ** 30 };
+    expect(() => decryptSecret(tampered, "pass")).toThrow(/scrypt N/);
+  });
+  it("rejects an unsupported kdf", () => {
+    const ks = encryptSecret("s", "pass", "privatekey", "ed25519/x");
+    expect(() => decryptSecret({ ...ks, kdf: "pbkdf2" as unknown as "scrypt" }, "pass")).toThrow(/kdf/);
+  });
 });
