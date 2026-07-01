@@ -1,9 +1,17 @@
 #!/usr/bin/env tsx
 import { GraphClient, loadGraph, runDiagnosis, formatReportText, type ProbeRequest } from "@fiber-route-doctor/core";
 import { parseArgs } from "./args.js";
+import { parseCommand } from "./dispatch.js";
 
 async function main() {
-  const args = parseArgs(process.argv.slice(2));
+  const { command, rest } = parseCommand(process.argv.slice(2));
+
+  if (command === "keys" || command === "token") {
+    console.error(`'${command}' not yet implemented`);
+    process.exit(2);
+  }
+
+  const args = parseArgs(rest);
   const client = new GraphClient({ url: args.url, biscuit: args.biscuit });
   const model = await loadGraph(client);
   const probe: ProbeRequest = { source: args.source, target: args.target, amount: args.amount, asset: args.asset };
