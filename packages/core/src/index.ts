@@ -5,3 +5,4 @@ export * from "./graph-model.js";
 export * from "./find-path.js";
 export * from "./diagnose.js";
 export * from "./attribute.js";
+export * from "./graph-client.js";
