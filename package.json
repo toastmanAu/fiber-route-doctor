@@ -18,8 +18,10 @@
     "typecheck:core": "tsc -p packages/core/tsconfig.json --noEmit",
     "typecheck:cli": "tsc -p apps/cli/tsconfig.json --noEmit",
     "typecheck:web": "tsc -p apps/web/tsconfig.json --noEmit",
-    "typecheck": "npm run typecheck:core && npm run typecheck:cli && npm run typecheck:web",
-    "smoke:live": "node --import tsx scripts/live-smoke.mjs"
+    "typecheck:biscuit": "tsc -p packages/biscuit/tsconfig.json --noEmit",
+    "typecheck": "npm run typecheck:core && npm run typecheck:cli && npm run typecheck:web && npm run typecheck:biscuit",
+    "smoke:live": "node --import tsx scripts/live-smoke.mjs",
+    "smoke:biscuit": "node --import tsx scripts/biscuit-live-smoke.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.1.0",

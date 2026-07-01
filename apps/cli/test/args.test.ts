@@ -14,4 +14,9 @@ describe("parseArgs", () => {
   it("throws when a required flag is missing", () => {
     expect(() => parseArgs(["--url", "u", "--source", "0xA"])).toThrow(/target/);
   });
+  it("parses --profile and --auth-token-file", () => {
+    const a = parseArgs(["--url", "u", "--source", "0xA", "--target", "0xC", "--amount", "5", "--profile", "mynode", "--auth-token-file", "/f"]);
+    expect(a.profile).toBe("mynode");
+    expect(a.authTokenFile).toBe("/f");
+  });
 });
