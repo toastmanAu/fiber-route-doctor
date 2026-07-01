@@ -27,7 +27,7 @@ export class GraphModel {
 
   static fromRpc(nodes: RpcGraphNode[], channels: RpcChannelInfo[]): GraphModel {
     const nodeMap = new Map<Hex, GraphNodeInfo>();
-    for (const n of nodes) nodeMap.set(n.pubkey, { pubkey: n.pubkey, name: n.node_name ?? null, addresses: n.addresses });
+    for (const n of nodes) nodeMap.set(n.pubkey, { pubkey: n.pubkey, name: n.node_name ?? null, addresses: [...n.addresses] });
 
     const outgoing = new Map<Hex, DirectedEdge[]>();
     const incoming = new Map<Hex, DirectedEdge[]>();
@@ -55,9 +55,9 @@ export class GraphModel {
 
   hasNode(pubkey: Hex): boolean { return this.nodes.has(pubkey); }
   node(pubkey: Hex): GraphNodeInfo | undefined { return this.nodes.get(pubkey); }
-  edgesFrom(pubkey: Hex): DirectedEdge[] { return this.outgoing.get(pubkey) ?? []; }
-  edgesTo(pubkey: Hex): DirectedEdge[] { return this.incoming.get(pubkey) ?? []; }
-  allEdges(): DirectedEdge[] { return this.edges; }
+  edgesFrom(pubkey: Hex): DirectedEdge[] { return [...(this.outgoing.get(pubkey) ?? [])]; }
+  edgesTo(pubkey: Hex): DirectedEdge[] { return [...(this.incoming.get(pubkey) ?? [])]; }
+  allEdges(): DirectedEdge[] { return [...this.edges]; }
   assetsOf(pubkey: Hex): Set<AssetId> {
     const s = new Set<AssetId>();
     for (const e of this.edgesFrom(pubkey)) s.add(e.asset);
