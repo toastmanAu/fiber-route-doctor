@@ -8,6 +8,7 @@ export * from "./attribute.js";
 export * from "./graph-client.js";
 export * from "./health-types.js";
 export * from "./health-client.js";
+export * from "./health-checks.js";
 export * from "./route-probe.js";
 export * from "./format.js";
 export * from "./route-doctor.js";
