@@ -2,14 +2,14 @@
 import { GraphClient, loadGraph, runDiagnosis, formatReportText, type ProbeRequest } from "@fiber-route-doctor/core";
 import { parseArgs } from "./args.js";
 import { parseCommand } from "./dispatch.js";
+import { runKeys } from "./commands/keys.js";
+import { runToken } from "./commands/token.js";
 
 async function main() {
   const { command, rest } = parseCommand(process.argv.slice(2));
 
-  if (command === "keys" || command === "token") {
-    console.error(`'${command}' not yet implemented`);
-    process.exit(2);
-  }
+  if (command === "keys") process.exit(await runKeys(rest));
+  if (command === "token") process.exit(await runToken(rest));
 
   const args = parseArgs(rest);
   const client = new GraphClient({ url: args.url, biscuit: args.biscuit });
