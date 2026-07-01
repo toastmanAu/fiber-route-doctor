@@ -1,11 +1,11 @@
 import { describe, it, expect } from "vitest";
 import { GraphModel, findBestPath, edgeUsable, CKB_ASSET, type ProbeRequest, type RpcChannelInfo } from "../src/index.js";
 
-function chan(op: string, a: string, b: string, feeAB: string, opts: Partial<{ enabled: boolean; cap: string; min: string }> = {}): RpcChannelInfo {
-  const u = { timestamp: "0x1", enabled: opts.enabled ?? true, fee_rate: feeAB, tlc_expiry_delta: "0x3e8", tlc_minimum_value: opts.min ?? "0x1" };
+function chan(op: string, a: string, b: string, feeAB: string, opts: Partial<{ enabled: boolean; cap: string; min: string; max: string; udt: boolean }> = {}): RpcChannelInfo {
+  const u = { timestamp: "0x1", enabled: opts.enabled ?? true, fee_rate: feeAB, tlc_expiry_delta: "0x3e8", tlc_minimum_value: opts.min ?? "0x1", ...(opts.max ? { tlc_maximum_value: opts.max } : {}) };
   return {
-    channel_outpoint: op, node1: a, node2: b, capacity: opts.cap ?? "0xf4240", // 1_000_000
-    funding_udt_type_script: null,
+    channel_outpoint: op, node1: a, node2: b, capacity: opts.cap ?? "0xf4240",
+    funding_udt_type_script: opts.udt ? { code_hash: "0x11", hash_type: "type", args: "0x22" } : null,
     update_info_of_node1: u,
     update_info_of_node2: { ...u, fee_rate: feeAB }
   };
@@ -50,5 +50,33 @@ describe("findBestPath", () => {
   it("returns null when the target is unreachable", () => {
     const m = GraphModel.fromRpc([], [chan("0x1", "0xA", "0xB", "0xa")]);
     expect(findBestPath(m, probe)).toBeNull();
+  });
+});
+
+describe("edgeUsable — additional constraints", () => {
+  it("rejects an asset mismatch (UDT edge vs CKB probe)", () => {
+    const m = GraphModel.fromRpc([], [chan("0x1", "0xA", "0xB", "0xa", { udt: true })]);
+    expect(edgeUsable(m.edgesFrom("0xA")[0], probe)).toBe(false);
+  });
+  it("rejects when amount exceeds tlcMaximumValue", () => {
+    const m = GraphModel.fromRpc([], [chan("0x1", "0xA", "0xB", "0xa", { max: "0x1" })]);
+    expect(edgeUsable(m.edgesFrom("0xA")[0], probe)).toBe(false);
+  });
+});
+
+describe("findBestPath — edge cases", () => {
+  it("returns an empty path when source equals target", () => {
+    const m = GraphModel.fromRpc([], [chan("0x1", "0xA", "0xB", "0xa")]);
+    const r = findBestPath(m, { ...probe, target: "0xA" });
+    expect(r).toEqual({ hops: [], totalFee: 0n, totalExpiry: 0n });
+  });
+  it("breaks ties deterministically by lexicographically smaller node", () => {
+    // A->B->D and A->C->D have identical total fee; B < C so the B path wins.
+    const m = GraphModel.fromRpc([], [
+      chan("0x1", "0xA", "0xB", "0xa"), chan("0x2", "0xB", "0xD", "0xa"),
+      chan("0x3", "0xA", "0xC", "0xa"), chan("0x4", "0xC", "0xD", "0xa")
+    ]);
+    const r = findBestPath(m, { ...probe, target: "0xD" });
+    expect(r!.hops.map(h => h.to)).toEqual(["0xB", "0xD"]);
   });
 });
