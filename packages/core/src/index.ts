@@ -3,3 +3,4 @@ export * from "./types.js";
 export * from "./asset.js";
 export * from "./graph-model.js";
 export * from "./find-path.js";
+export * from "./diagnose.js";
