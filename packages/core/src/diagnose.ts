@@ -44,7 +44,7 @@ export function diagnose(model: GraphModel, probe: ProbeRequest, probeResult: Pr
   return { verdict: "blocked", probe, path: [], totalFee: 0n, totalExpiry: 0n, reasons: [], fixes: [], routerConfirmed: false };
 }
 
-function sameChannels(a: string[], b: string[]): boolean {
+function sameChannels(a: readonly string[], b: readonly string[]): boolean {
   if (a.length !== b.length) return false;
   return a.every((x, i) => x === b[i]);
 }
