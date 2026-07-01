@@ -4,3 +4,4 @@ export * from "./scopes.js";
 export * from "./keys.js";
 export * from "./mint.js";
 export * from "./authorize.js";
+export * from "./keystore.js";
