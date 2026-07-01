@@ -19,6 +19,7 @@ function makeRouter(url: string, biscuit?: string) {
       const headers: Record<string, string> = { "Content-Type": "application/json" };
       if (biscuit) headers["Authorization"] = `Bearer ${biscuit}`;
       const res = await fetch(url, { method: "POST", headers, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "build_router", params: [params] }) });
+      if (!res.ok) throw new Error(`build_router HTTP ${res.status}`);
       const json = await res.json() as { result?: { router_hops: Array<{ channel_outpoint?: string }> }; error?: { message: string } };
       if (json.error) throw new Error(json.error.message);
       return json.result!;
