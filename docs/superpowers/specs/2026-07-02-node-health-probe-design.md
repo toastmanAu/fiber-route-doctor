@@ -58,6 +58,16 @@ Follows the Route Doctor pattern: one network boundary collects a plain snapshot
 - One-shot mode exit codes: **0** = all pass, **1** = degraded (any warn), **2** = unhealthy (any fail). Tool crashes keep the existing `main().catch` exit 2 — an unreachable/erroring probe is unhealthy either way.
 - `--watch`: loop with `setInterval`-style polling; re-render full report each tick; when any check's status changes from the previous tick, print a timestamped transition line (`peers: pass → fail`). Ctrl+C to exit. Watch mode ignores exit-code semantics.
 
+### Watch-mode alerting (webhooks)
+
+- `--webhook <url>` (watch mode only; error if given without `--watch`): on every tick where at least one check transitioned status, POST a JSON alert to the URL. No transitions → no POST (transition-edge triggered, not level-triggered — no alert spam on a steadily-broken node).
+- `--webhook-format generic|slack|discord` (default `generic`):
+  - `generic`: `{ ts, nodeUrl, verdict, previousVerdict, transitions: [{ check, from, to, reason }], report }` — bigints as strings, machine-consumable.
+  - `slack`: `{ text: "<human summary>" }`; `discord`: `{ content: "<human summary>" }` — same one-line-per-transition summary the terminal prints, so a bare Slack/Discord incoming-webhook URL works with zero glue.
+- Delivery is fire-and-forget with one retry: a failed POST (non-2xx or network error) logs a single warning line and never crashes or delays the watch loop.
+- Security: the biscuit token is **never** included in the payload or webhook headers; webhook URL must be `http:`/`https:` (validated at arg-parse time); payload contains only the health report data the terminal already shows.
+- Implementation seam: `postAlert(url, format, alert, fetchImpl)` in core (`health-alert.ts`) so it's unit-testable with injected fetch and reusable later; the CLI watch loop owns transition detection and calls it.
+
 ### Web (`apps/web`)
 
 - New health panel beside the existing route view: inputs (node URL, token — reusing the existing form conventions), "Probe" button, traffic-light check list (green/amber/red/grey), node summary card (version, pubkey short-form, chain, peer/channel counts), and an auto-refresh toggle (browser equivalent of `--watch`, default off, 10s interval).
@@ -83,14 +93,16 @@ TDD per task (RED → GREEN), Vitest, consistent with the repo's existing 73-tes
 - **`collectHealthSnapshot` tests** — injected `fetchImpl` (same pattern as GraphClient tests): HTTP 401/permission-denied RPC error → `auth-denied`; network throw / HTTP 500 → `transport-error`; mixed outcomes.
 - **Verdict/orchestrator tests** — worst-status aggregation, skip exclusion.
 - **Formatter tests** — text output shape for pass/warn/fail/skip mixes; JSON serializability (bigint handling).
-- **CLI tests** — dispatch recognizes `health`; arg validation (`--interval` bounds); exit-code mapping.
+- **CLI tests** — dispatch recognizes `health`; arg validation (`--interval` bounds, `--webhook` requires `--watch`, webhook URL scheme, `--webhook-format` enum); exit-code mapping.
+- **Alerting tests** — injected `fetchImpl`: POST fired with correct payload on a transition tick; no POST when nothing transitioned; slack/discord payload shapes; failed POST retries once then logs without throwing; token never present in payload.
 - **Gated live smoke** — `npm run smoke:health` (env-gated on `FIBER_RPC_URL` + token env, like `smoke:biscuit`) against the driveThree node: expects verdict computed, node_info version string non-empty, ≥1 peer. Watch mode excluded from smoke (manual).
 
 Web panel is verified by typecheck + manual demo run (consistent with the existing web app's testing posture).
 
 ## Out of scope / backlog
 
-- Alerting/webhooks from watch mode; historical trending.
+- Historical trending / persistence of health results.
+- Webhooks from the web panel's auto-refresh (browser cross-origin POST to arbitrary webhook URLs is unreliable; alerting is CLI-only).
 - Channel liquidity *snapshot* tool (separate roadmap piece — deeper balance analytics than the health warn rules here).
 - Per-check `--only`/`--skip` filters.
 
@@ -101,4 +113,6 @@ fiber-route-doctor keys import --hex ~/.fiber-dt/biscuit_private_key
 fiber-route-doctor token generate --scope readonly --profile driveThree --url http://127.0.0.1:8231
 fiber-route-doctor health --profile driveThree --url http://127.0.0.1:8231          # one-shot
 fiber-route-doctor health --profile driveThree --url http://127.0.0.1:8231 --watch  # live ops view
+fiber-route-doctor health --profile driveThree --url http://127.0.0.1:8231 --watch \
+  --webhook https://discord.com/api/webhooks/… --webhook-format discord             # alert on transitions
 ```
