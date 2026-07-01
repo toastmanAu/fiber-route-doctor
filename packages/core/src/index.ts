@@ -7,3 +7,5 @@ export * from "./diagnose.js";
 export * from "./attribute.js";
 export * from "./graph-client.js";
 export * from "./route-probe.js";
+export * from "./format.js";
+export * from "./route-doctor.js";
