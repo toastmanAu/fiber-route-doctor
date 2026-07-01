@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, mkdirSync, chmodSync, renameSync } from "node:fs";
 import { dirname } from "node:path";
 import type { KeystoreFile } from "./keystore.js";
 
@@ -17,6 +17,9 @@ export class NodeFsKeystore implements KeystoreBackend {
   }
   save(ks: KeystoreFile): void {
     mkdirSync(dirname(this.filePath), { recursive: true });
-    writeFileSync(this.filePath, JSON.stringify(ks, null, 2), { mode: 0o600 });
+    const tmp = `${this.filePath}.tmp`;
+    writeFileSync(tmp, JSON.stringify(ks, null, 2), { mode: 0o600 });
+    chmodSync(tmp, 0o600);
+    renameSync(tmp, this.filePath);
   }
 }
