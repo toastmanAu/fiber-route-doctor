@@ -4,6 +4,14 @@ export interface GraphClientOptions { url: string; biscuit?: string; fetchImpl?:
 
 interface JsonRpcResponse<T> { result?: T; error?: { code: number; message: string }; }
 
+/** JSON-RPC method-level error (the node responded, the method failed). */
+export class RpcMethodError extends Error {
+  constructor(readonly method: string, readonly code: number, message: string) {
+    super(`RPC ${method} error ${code}: ${message}`);
+    this.name = "RpcMethodError";
+  }
+}
+
 export class GraphClient {
   private readonly url: string;
   private readonly biscuit?: string;
@@ -17,14 +25,14 @@ export class GraphClient {
     this.fetchImpl = opts.fetchImpl ?? fetch.bind(globalThis);
   }
 
-  private async call<T>(method: string, params: unknown[] = []): Promise<T> {
+  protected async call<T>(method: string, params: unknown[] = []): Promise<T> {
     const id = ++this.id;
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (this.biscuit) headers["Authorization"] = `Bearer ${this.biscuit}`;
     const res = await this.fetchImpl(this.url, { method: "POST", headers, body: JSON.stringify({ jsonrpc: "2.0", id, method, params }) });
     if (!res.ok) throw new Error(`RPC ${method} HTTP ${res.status}`);
     const json = (await res.json()) as JsonRpcResponse<T>;
-    if (json.error) throw new Error(`RPC ${method} error ${json.error.code}: ${json.error.message}`);
+    if (json.error) throw new RpcMethodError(method, json.error.code, json.error.message);
     return json.result as T;
   }
 
