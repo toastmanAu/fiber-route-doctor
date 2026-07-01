@@ -33,27 +33,27 @@ export interface RpcGraphNode {
 
 // ---- Normalized model ----
 export interface DirectedEdge {
-  channelOutpoint: Hex;
-  from: Hex;
-  to: Hex;
-  asset: AssetId;
-  capacity: bigint;
-  enabled: boolean;
-  feeRate: bigint;         // per the channel's advertised forwarding fee rate
-  tlcExpiryDelta: bigint;  // milliseconds
-  tlcMinimumValue: bigint;
-  tlcMaximumValue: bigint | null;
+  readonly channelOutpoint: Hex;
+  readonly from: Hex;
+  readonly to: Hex;
+  readonly asset: AssetId;
+  readonly capacity: bigint;
+  readonly enabled: boolean;
+  readonly feeRate: bigint;         // per the channel's advertised forwarding fee rate
+  readonly tlcExpiryDelta: bigint;  // milliseconds
+  readonly tlcMinimumValue: bigint;
+  readonly tlcMaximumValue: bigint | null;
 }
-export interface GraphNodeInfo { pubkey: Hex; name: string | null; addresses: string[]; }
+export interface GraphNodeInfo { readonly pubkey: Hex; readonly name: string | null; readonly addresses: readonly string[]; }
 
 // ---- Probe & report ----
 export interface ProbeRequest {
-  source: Hex;
-  target: Hex;
-  amount: bigint;
-  asset: AssetId;
-  maxFeeRate?: bigint;      // per-thousand ceiling, default 5 (0.5%)
-  maxTotalExpiry?: bigint;  // ms ceiling, optional
+  readonly source: Hex;
+  readonly target: Hex;
+  readonly amount: bigint;
+  readonly asset: AssetId;
+  readonly maxFeeRate?: bigint;      // per-thousand ceiling, default 5 (0.5%)
+  readonly maxTotalExpiry?: bigint;  // ms ceiling, optional
 }
 
 export type Verdict = "payable" | "risky" | "blocked";
@@ -71,35 +71,35 @@ export type ReasonCause =
   | "router_declined";
 
 export interface Reason {
-  cause: ReasonCause;
-  channelOutpoint?: Hex;
-  detail: string;
+  readonly cause: ReasonCause;
+  readonly channelOutpoint?: Hex;
+  readonly detail: string;
 }
-export interface Fix { detail: string; }
+export interface Fix { readonly detail: string; }
 
 export interface ReportHop {
-  index: number;
-  from: Hex;
-  to: Hex;
-  channelOutpoint: Hex;
-  asset: AssetId;
-  fee: bigint;
-  expiryDelta: bigint;
+  readonly index: number;
+  readonly from: Hex;
+  readonly to: Hex;
+  readonly channelOutpoint: Hex;
+  readonly asset: AssetId;
+  readonly fee: bigint;
+  readonly expiryDelta: bigint;
 }
 
 export interface RouteReport {
-  verdict: Verdict;
-  probe: ProbeRequest;
-  path: ReportHop[];
-  totalFee: bigint;
-  totalExpiry: bigint;
-  reasons: Reason[];
-  fixes: Fix[];
-  routerConfirmed: boolean;
+  readonly verdict: Verdict;
+  readonly probe: ProbeRequest;
+  readonly path: readonly ReportHop[];
+  readonly totalFee: bigint;
+  readonly totalExpiry: bigint;
+  readonly reasons: readonly Reason[];
+  readonly fixes: readonly Fix[];
+  readonly routerConfirmed: boolean;
 }
 
 /** Result of the optional build_router cross-check. */
 export type ProbeResult =
-  | { kind: "router_path"; channelOutpoints: Hex[] }
-  | { kind: "router_error"; message: string }
+  | { kind: "router_path"; readonly channelOutpoints: readonly Hex[] }
+  | { kind: "router_error"; readonly message: string }
   | { kind: "skipped" };
