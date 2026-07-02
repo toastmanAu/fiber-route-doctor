@@ -29,6 +29,29 @@ Add `--router` to cross-check against the node's own `build_router`.
 npm --workspace @fiber-route-doctor/web run dev
 ```
 
+## Node Health Probe
+
+Is your node up, authenticated, connected, and able to move money?
+
+```bash
+# one-shot (exit code: 0 healthy, 1 degraded, 2 unhealthy)
+fiber-route-doctor health --profile driveThree --url http://127.0.0.1:8231
+
+# live ops view, re-probing every 10s
+fiber-route-doctor health --profile driveThree --url http://127.0.0.1:8231 --watch
+
+# alert a Discord channel when any check changes status
+fiber-route-doctor health --profile driveThree --url http://127.0.0.1:8231 --watch \
+  --webhook https://discord.com/api/webhooks/… --webhook-format discord
+```
+
+Checks: reachability, biscuit auth (names missing scopes), node info, peer connectivity,
+channel health (non-ready/disabled channels, pending TLCs, outbound liquidity).
+Auth uses the same token resolution as `diagnose`: `--biscuit`, `--auth-token-file`,
+`--profile`, or `FNN_AUTH_TOKEN`. Webhook payloads never contain the token.
+
+Live validation: `FRD_BISCUIT_KEY=~/.fiber-dt/biscuit_private_key FIBER_RPC_URL=http://127.0.0.1:8231 npm run smoke:health`
+
 ## Live smoke
 See [docs/demo-node.md](docs/demo-node.md). Requires a reachable Fiber v0.9 node.
 
