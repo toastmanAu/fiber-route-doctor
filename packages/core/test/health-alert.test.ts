@@ -58,4 +58,10 @@ describe("postAlert", () => {
       .mockImplementationOnce(async () => new Response("ok", { status: 200 }));
     expect(await postAlert("https://hooks.example/x", "generic", ALERT, fetchImpl)).toBe(true);
   });
+  it("passes an AbortSignal so a hanging endpoint cannot stall the watch loop", async () => {
+    const fetchImpl = vi.fn(async () => new Response("ok", { status: 200 }));
+    await postAlert("https://hooks.example/x", "generic", ALERT, fetchImpl);
+    const [, init] = fetchImpl.mock.calls[0] as unknown as [string, RequestInit];
+    expect(init.signal).toBeInstanceOf(AbortSignal);
+  });
 });

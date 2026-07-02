@@ -50,4 +50,26 @@ describe("collectHealthSnapshot", () => {
     expect(s.outcomes.nodeInfo).toMatchObject({ ok: false, kind: "transport-error", detail: expect.stringContaining("ECONNREFUSED") });
     expect(s.outcomes.listPeers).toMatchObject({ ok: false, kind: "transport-error", detail: expect.stringContaining("502") });
   });
+  it("classifies HTTP 401 (reverse-proxy auth) as auth-denied, not transport-error", async () => {
+    const fetchImpl = routedFetch({
+      node_info: () => new Response("unauthorized", { status: 401 }),
+      list_peers: () => new Response("unauthorized", { status: 401 }),
+      list_channels: () => new Response("unauthorized", { status: 401 })
+    });
+    const s = await collectHealthSnapshot(new HealthClient({ url: "http://n/", fetchImpl }));
+    expect(s.outcomes.nodeInfo).toMatchObject({ ok: false, kind: "auth-denied" });
+    expect(s.outcomes.listPeers).toMatchObject({ ok: false, kind: "auth-denied" });
+    expect(s.outcomes.listChannels).toMatchObject({ ok: false, kind: "auth-denied" });
+  });
+  it("classifies HTTP 403 as auth-denied and HTTP 500 as transport-error", async () => {
+    const fetchImpl = routedFetch({
+      node_info: () => new Response("forbidden", { status: 403 }),
+      list_peers: () => new Response("server error", { status: 500 }),
+      list_channels: () => new Response("forbidden", { status: 403 })
+    });
+    const s = await collectHealthSnapshot(new HealthClient({ url: "http://n/", fetchImpl }));
+    expect(s.outcomes.nodeInfo).toMatchObject({ ok: false, kind: "auth-denied" });
+    expect(s.outcomes.listPeers).toMatchObject({ ok: false, kind: "transport-error" });
+    expect(s.outcomes.listChannels).toMatchObject({ ok: false, kind: "auth-denied" });
+  });
 });

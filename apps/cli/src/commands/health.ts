@@ -20,6 +20,7 @@ export function parseHealthArgs(rest: string[]): HealthArgs {
     const next = rest[i + 1];
     if (next === undefined || next.startsWith("--")) { bools.add(key); } else { flags.set(key, next); i++; }
   }
+  if (bools.has("webhook")) throw new Error("--webhook requires a URL value");
   const url = flags.get("url");
   if (!url) throw new Error("missing required flag --url");
   const watch = bools.has("watch");

@@ -1,4 +1,4 @@
-import { GraphClient, RpcMethodError } from "./graph-client.js";
+import { GraphClient, RpcMethodError, RpcHttpError } from "./graph-client.js";
 import type { RpcChannel, RpcNodeInfo, RpcPeerInfo, HealthSnapshot, RpcOutcome } from "./health-types.js";
 
 export class HealthClient extends GraphClient {
@@ -17,6 +17,11 @@ const UNAUTHORIZED_CODE = -32999; // fnn BiscuitAuthMiddleware auth_reject_error
 
 function classifyFailure(e: unknown): RpcOutcome {
   if (e instanceof RpcMethodError && e.code === UNAUTHORIZED_CODE) {
+    return { ok: false, kind: "auth-denied", detail: e.message };
+  }
+  // HTTP 401/403 means a reverse proxy in front of the node rejected the request on auth grounds —
+  // the node WAS reached, so this is auth-denied, not a transport failure.
+  if (e instanceof RpcHttpError && (e.status === 401 || e.status === 403)) {
     return { ok: false, kind: "auth-denied", detail: e.message };
   }
   return { ok: false, kind: "transport-error", detail: e instanceof Error ? e.message : String(e) };

@@ -12,6 +12,14 @@ export class RpcMethodError extends Error {
   }
 }
 
+/** HTTP-level error (the node — or a reverse proxy in front of it — responded with a non-2xx status). */
+export class RpcHttpError extends Error {
+  constructor(readonly method: string, readonly status: number) {
+    super(`RPC ${method} HTTP ${status}`);
+    this.name = "RpcHttpError";
+  }
+}
+
 export class GraphClient {
   private readonly url: string;
   private readonly biscuit?: string;
@@ -30,7 +38,7 @@ export class GraphClient {
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (this.biscuit) headers["Authorization"] = `Bearer ${this.biscuit}`;
     const res = await this.fetchImpl(this.url, { method: "POST", headers, body: JSON.stringify({ jsonrpc: "2.0", id, method, params }) });
-    if (!res.ok) throw new Error(`RPC ${method} HTTP ${res.status}`);
+    if (!res.ok) throw new RpcHttpError(method, res.status);
     const json = (await res.json()) as JsonRpcResponse<T>;
     if (json.error) throw new RpcMethodError(method, json.error.code, json.error.message);
     return json.result as T;

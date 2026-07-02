@@ -35,14 +35,16 @@ export function buildAlertBody(format: WebhookFormat, alert: HealthAlert): strin
   return JSON.stringify(alert);
 }
 
+const WEBHOOK_TIMEOUT_MS = 5000;
+
 /** Fire-and-forget webhook delivery: one retry, never throws. */
 export async function postAlert(url: string, format: WebhookFormat, alert: HealthAlert, fetchImpl: typeof fetch = fetch.bind(globalThis)): Promise<boolean> {
   const body = buildAlertBody(format, alert);
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      const res = await fetchImpl(url, { method: "POST", headers: { "Content-Type": "application/json" }, body });
+      const res = await fetchImpl(url, { method: "POST", headers: { "Content-Type": "application/json" }, body, signal: AbortSignal.timeout(WEBHOOK_TIMEOUT_MS) });
       if (res.ok) return true;
-    } catch { /* retry once, then give up */ }
+    } catch { /* retry once (including on abort/timeout), then give up */ }
   }
   return false;
 }

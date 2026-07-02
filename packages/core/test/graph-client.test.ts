@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { GraphClient } from "../src/index.js";
+import { GraphClient, RpcHttpError } from "../src/index.js";
 
 function mockFetch(result: unknown) {
   return vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
@@ -28,5 +28,17 @@ describe("GraphClient", () => {
     const fetchImpl = vi.fn(async () => new Response(JSON.stringify({ jsonrpc: "2.0", id: 1, error: { code: -1, message: "boom" } }), { status: 200 }));
     const client = new GraphClient({ url: "http://node.local/rpc", fetchImpl });
     await expect(client.graphNodes()).rejects.toThrow(/boom/);
+  });
+  it("throws a typed RpcHttpError carrying the status when the response is not ok", async () => {
+    const fetchImpl = vi.fn(async () => new Response("nope", { status: 401 }));
+    const client = new GraphClient({ url: "http://node.local/rpc", fetchImpl });
+    await expect(client.graphNodes()).rejects.toThrow(/RPC graph_nodes HTTP 401/);
+    try {
+      await client.graphNodes();
+      expect.unreachable();
+    } catch (e) {
+      expect(e).toBeInstanceOf(RpcHttpError);
+      expect((e as RpcHttpError).status).toBe(401);
+    }
   });
 });

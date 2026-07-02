@@ -24,4 +24,8 @@ describe("parseHealthArgs", () => {
     expect(() => parseHealthArgs(["--url", "u", "--watch", "--webhook", "not a url"])).toThrow();
     expect(() => parseHealthArgs(["--url", "u", "--watch", "--webhook", "https://h/x", "--webhook-format", "teams"])).toThrow(/webhook-format/);
   });
+  it("rejects a bare --webhook with no value", () => {
+    expect(() => parseHealthArgs(["--url", "u", "--watch", "--webhook"])).toThrow(/--webhook/);
+    expect(() => parseHealthArgs(["--url", "u", "--watch", "--webhook", "--json"])).toThrow(/--webhook/);
+  });
 });
