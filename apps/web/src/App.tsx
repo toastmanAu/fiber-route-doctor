@@ -4,6 +4,7 @@ import { buildProbe } from "./probe-form.js";
 import { buildRouteView } from "./route-view.js";
 import { RouteGraph } from "./RouteGraph.js";
 import { HealthPanel } from "./HealthPanel.js";
+import { LiquidityPanel } from "./LiquidityPanel.js";
 
 export function App() {
   const [url, setUrl] = useState("http://127.0.0.1:8227");
@@ -41,6 +42,7 @@ export function App() {
       {report && <RouteGraph view={buildRouteView(report)} />}
       <pre style={{ background: "#111", color: "#0f0", padding: "1rem", marginTop: "1rem", whiteSpace: "pre-wrap" }}>{out}</pre>
       <HealthPanel />
+      <LiquidityPanel />
     </main>
   );
 }
