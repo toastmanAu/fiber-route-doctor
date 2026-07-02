@@ -1,6 +1,6 @@
 import { assetIdOf } from "./asset.js";
 import type { RpcChannel } from "./health-types.js";
-import type { AssetLiquidity, ChannelLiquidity, LiquidityReport, LiquiditySnapshot } from "./liquidity-types.js";
+import type { AssetLiquidity, ChannelLiquidity, LiquidityReport, LiquiditySnapshot, PeerGroup, SkewFlag } from "./liquidity-types.js";
 
 const dec = (hex: string): string => BigInt(hex).toString();
 
@@ -29,6 +29,41 @@ function isActive(c: ChannelLiquidity): boolean {
 
 const maxBig = (values: bigint[]): bigint => values.reduce((m, v) => (v > m ? v : m), 0n);
 const sumBig = (values: bigint[]): bigint => values.reduce((s, v) => s + v, 0n);
+
+export const SKEW_DRAINED_PCT = 10;
+export const SKEW_FULL_PCT = 90;
+
+function buildSkews(channels: ChannelLiquidity[]): SkewFlag[] {
+  const out: SkewFlag[] = [];
+  for (const c of channels.filter(isActive)) {
+    const local = BigInt(c.local), total = BigInt(c.local) + BigInt(c.remote);
+    if (total === 0n) continue;
+    const pct = Number((local * 100n) / total);
+    if (pct < SKEW_DRAINED_PCT) out.push({ channelId: c.channelId, asset: c.asset, localRatioPct: pct, flag: "drained" });
+    else if (pct > SKEW_FULL_PCT) out.push({ channelId: c.channelId, asset: c.asset, localRatioPct: pct, flag: "full" });
+  }
+  return out;
+}
+
+function buildPeerGroups(channels: ChannelLiquidity[]): PeerGroup[] {
+  const byPeer = new Map<string, ChannelLiquidity[]>();
+  for (const c of channels.filter(isActive)) {
+    const group = byPeer.get(c.peer) ?? [];
+    group.push(c);
+    byPeer.set(c.peer, group);
+  }
+  return [...byPeer.entries()]
+    .map(([peer, group]) => ({
+      peer,
+      channelCount: group.length,
+      outbound: sumBig(group.map((c) => BigInt(c.local))).toString(),
+      inbound: sumBig(group.map((c) => BigInt(c.remote))).toString()
+    }))
+    .sort((a, b) => {
+      const d = BigInt(b.outbound) - BigInt(a.outbound);
+      return d > 0n ? 1 : d < 0n ? -1 : a.peer < b.peer ? -1 : 1;
+    });
+}
 
 function sortAssetKeys(keys: string[]): string[] {
   return keys.sort((a, b) => (a === "CKB" ? -1 : b === "CKB" ? 1 : a < b ? -1 : 1));
@@ -60,8 +95,8 @@ export function computeLiquidityReport(snapshot: LiquiditySnapshot): LiquidityRe
   return {
     ts: snapshot.ts,
     assets,
-    skews: [],
-    peers: [],
+    skews: buildSkews(snapshot.channels),
+    peers: buildPeerGroups(snapshot.channels),
     totalChannels: snapshot.channels.length,
     excludedChannels: snapshot.channels.length - activeCount
   };

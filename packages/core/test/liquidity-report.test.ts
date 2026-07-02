@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeLiquidityReport } from "../src/index.js";
+import { computeLiquidityReport, SKEW_DRAINED_PCT, SKEW_FULL_PCT } from "../src/index.js";
 import { liq, snapOf } from "./liquidity-fixtures.js";
 
 describe("computeLiquidityReport — per-asset totals", () => {
@@ -37,5 +37,50 @@ describe("computeLiquidityReport — per-asset totals", () => {
     const r = computeLiquidityReport(snapOf([]));
     expect(r.assets).toEqual([]);
     expect(r.totalChannels).toBe(0);
+  });
+});
+
+describe("computeLiquidityReport — skew flags", () => {
+  it("flags drained (<10% local) and full (>90% local) channels", () => {
+    const r = computeLiquidityReport(snapOf([
+      liq({ channelId: "0x01", local: "50", remote: "950" }),   // 5% -> drained
+      liq({ channelId: "0x02", local: "950", remote: "50" }),   // 95% -> full
+      liq({ channelId: "0x03", local: "500", remote: "500" })   // 50% -> no flag
+    ]));
+    expect(r.skews).toEqual([
+      { channelId: "0x01", asset: "CKB", localRatioPct: 5, flag: "drained" },
+      { channelId: "0x02", asset: "CKB", localRatioPct: 95, flag: "full" }
+    ]);
+  });
+  it("does not flag exactly at the thresholds (strict inequality)", () => {
+    const r = computeLiquidityReport(snapOf([
+      liq({ channelId: "0x01", local: "100", remote: "900" }),  // exactly 10%
+      liq({ channelId: "0x02", local: "900", remote: "100" })   // exactly 90%
+    ]));
+    expect(r.skews).toEqual([]);
+    expect(SKEW_DRAINED_PCT).toBe(10);
+    expect(SKEW_FULL_PCT).toBe(90);
+  });
+  it("skips zero-capacity channels and inactive channels", () => {
+    const r = computeLiquidityReport(snapOf([
+      liq({ channelId: "0x01", local: "0", remote: "0" }),
+      liq({ channelId: "0x02", local: "1", remote: "999", enabled: false })
+    ]));
+    expect(r.skews).toEqual([]);
+  });
+});
+
+describe("computeLiquidityReport — peer groups", () => {
+  it("groups active channels by counterparty, sorted by outbound descending", () => {
+    const r = computeLiquidityReport(snapOf([
+      liq({ channelId: "0x01", peer: "0x02aa", local: "100", remote: "1" }),
+      liq({ channelId: "0x02", peer: "0x02bb", local: "900", remote: "2" }),
+      liq({ channelId: "0x03", peer: "0x02aa", local: "50", remote: "3" }),
+      liq({ channelId: "0x04", peer: "0x02cc", local: "5", state: "AwaitingChannelReady" })
+    ]));
+    expect(r.peers).toEqual([
+      { peer: "0x02bb", channelCount: 1, outbound: "900", inbound: "2" },
+      { peer: "0x02aa", channelCount: 2, outbound: "150", inbound: "4" }
+    ]);
   });
 });
