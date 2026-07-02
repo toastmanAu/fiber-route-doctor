@@ -28,4 +28,13 @@ describe("formatLiquidityText", () => {
     const empty = snapOf([]);
     expect(formatLiquidityText(computeLiquidityReport(empty), empty)).toContain("no channels — nothing to snapshot");
   });
+  it("labels ready-but-disabled channels as disabled and zero-capacity channels distinctly", () => {
+    const s = snapOf([
+      liq({ channelId: "0x0a", enabled: false }),
+      liq({ channelId: "0x0b", local: "0", remote: "0" })
+    ]);
+    const out = formatLiquidityText(computeLiquidityReport(s), s);
+    expect(out).toContain("0x0a excluded: disabled");
+    expect(out).toContain("(zero capacity)");
+  });
 });
