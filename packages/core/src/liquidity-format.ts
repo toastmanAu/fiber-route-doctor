@@ -1,4 +1,4 @@
-import type { ChannelLiquidity, LiquidityReport, LiquiditySnapshot, SkewFlag } from "./liquidity-types.js";
+import type { ChannelLiquidity, LiquidityDiff, LiquidityReport, LiquiditySnapshot, SkewFlag } from "./liquidity-types.js";
 
 const BAR_CELLS = 10;
 const shortId = (h: string): string => (h.length > 12 ? `${h.slice(0, 12)}…` : h);
@@ -38,5 +38,17 @@ export function formatLiquidityText(report: LiquidityReport, snapshot: Liquidity
     lines.push("peers:");
     for (const p of report.peers) lines.push(` peer ${shortId(p.peer)} — ${p.channelCount} channel(s), out ${p.outbound}, in ${p.inbound}`);
   }
+  return lines.join("\n");
+}
+
+const signed = (v: string): string => (v.startsWith("-") ? v : `+${v}`);
+
+export function formatLiquidityDiff(diff: LiquidityDiff): string {
+  const lines: string[] = [`Liquidity diff ${diff.fromTs} → ${diff.toTs}`];
+  for (const c of diff.opened) lines.push(` + opened ${shortId(c.channelId)} (${c.asset}, local ${c.local})`);
+  for (const c of diff.closed) lines.push(` - closed ${shortId(c.channelId)} (${c.asset})`);
+  for (const d of diff.balanceDeltas) lines.push(` Δ ${shortId(d.channelId)} local ${signed(d.localDelta)}, remote ${signed(d.remoteDelta)}`);
+  for (const a of diff.assetDeltas) lines.push(` Δ ${a.asset} out ${signed(a.outboundDelta)}, in ${signed(a.inboundDelta)}`);
+  if (lines.length === 1) lines.push(" no changes");
   return lines.join("\n");
 }

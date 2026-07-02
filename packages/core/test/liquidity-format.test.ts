@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeLiquidityReport, formatLiquidityText } from "../src/index.js";
+import { computeLiquidityReport, formatLiquidityText, diffSnapshots, formatLiquidityDiff } from "../src/index.js";
 import { liq, snapOf } from "./liquidity-fixtures.js";
 
 describe("formatLiquidityText", () => {
@@ -36,5 +36,24 @@ describe("formatLiquidityText", () => {
     const out = formatLiquidityText(computeLiquidityReport(s), s);
     expect(out).toContain("0x0a excluded: disabled");
     expect(out).toContain("(zero capacity)");
+  });
+});
+
+describe("formatLiquidityDiff", () => {
+  it("renders opened/closed channels and signed deltas", () => {
+    // ids stay <= 12 chars so shortId passes them through unshortened and each stays distinct
+    const prev = { ...snapOf([liq({ channelId: "0x01", local: "1000", remote: "0" }), liq({ channelId: "0x03", local: "7", remote: "7" })]), ts: "T0" };
+    const next = { ...snapOf([liq({ channelId: "0x01", local: "800", remote: "200" }), liq({ channelId: "0x02", local: "50", remote: "0" })]), ts: "T1" };
+    const out = formatLiquidityDiff(diffSnapshots(prev, next));
+    expect(out).toContain("T0 → T1");
+    expect(out).toContain("+ opened 0x02 (CKB, local 50)");
+    expect(out).toContain("- closed 0x03 (CKB)");
+    expect(out).toContain("Δ 0x01 local -200, remote +200");
+    expect(out).toContain("Δ CKB out -157, in +193");
+  });
+  it("says no changes for identical snapshots", () => {
+    const s = snapOf([liq()]);
+    const out = formatLiquidityDiff(diffSnapshots({ ...s, ts: "T0" }, { ...s, ts: "T1" }));
+    expect(out).toContain("no changes");
   });
 });
