@@ -14,4 +14,7 @@ describe("parseCommand", () => {
   it("throws on an unknown subcommand", () => {
     expect(() => parseCommand(["frobnicate"])).toThrow(/unknown command/);
   });
+  it("routes the health command", () => {
+    expect(parseCommand(["health", "--url", "u"])).toEqual({ command: "health", rest: ["--url", "u"] });
+  });
 });
