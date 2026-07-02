@@ -16,6 +16,11 @@ describe("isRunLimitError", () => {
     expect(isRunLimitError({ RunLimit: "Timeout" })).toBe(true);
   });
 
+  it("classifies the TooManyFacts and TooManyIterations RunLimit variants as run-limit errors", () => {
+    expect(isRunLimitError({ RunLimit: "TooManyFacts" })).toBe(true);
+    expect(isRunLimitError({ RunLimit: "TooManyIterations" })).toBe(true);
+  });
+
   it("does not classify a FailedLogic denial as a run-limit error", () => {
     expect(isRunLimitError({ FailedLogic: { Unauthorized: { policy: "Deny", checks: [] } } })).toBe(false);
   });

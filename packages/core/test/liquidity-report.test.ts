@@ -61,6 +61,16 @@ describe("computeLiquidityReport — skew flags", () => {
     expect(SKEW_DRAINED_PCT).toBe(10);
     expect(SKEW_FULL_PCT).toBe(90);
   });
+  it("flags full using exact ratio comparison, not the floored display percentage", () => {
+    // 907 / 1000 = 90.7% exactly -> above the 90% "full" threshold, even though
+    // Number((907n * 100n) / 1000n) floors to 90, which would wrongly look unflagged.
+    const r = computeLiquidityReport(snapOf([
+      liq({ channelId: "0x01", local: "907", remote: "93" })
+    ]));
+    expect(r.skews).toEqual([
+      { channelId: "0x01", asset: "CKB", localRatioPct: 90, flag: "full" }
+    ]);
+  });
   it("skips zero-capacity channels and inactive channels", () => {
     const r = computeLiquidityReport(snapOf([
       liq({ channelId: "0x01", local: "0", remote: "0" }),

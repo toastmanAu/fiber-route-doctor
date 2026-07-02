@@ -38,9 +38,11 @@ function buildSkews(channels: ChannelLiquidity[]): SkewFlag[] {
   for (const c of channels.filter(isActive)) {
     const local = BigInt(c.local), total = BigInt(c.local) + BigInt(c.remote);
     if (total === 0n) continue;
+    // localRatioPct is the floored display value; flag decisions use exact bigint
+    // cross-multiplication so e.g. 90.7% local isn't lost to flooring to 90 and missed.
     const pct = Number((local * 100n) / total);
-    if (pct < SKEW_DRAINED_PCT) out.push({ channelId: c.channelId, asset: c.asset, localRatioPct: pct, flag: "drained" });
-    else if (pct > SKEW_FULL_PCT) out.push({ channelId: c.channelId, asset: c.asset, localRatioPct: pct, flag: "full" });
+    if (local * 100n < total * BigInt(SKEW_DRAINED_PCT)) out.push({ channelId: c.channelId, asset: c.asset, localRatioPct: pct, flag: "drained" });
+    else if (local * 100n > total * BigInt(SKEW_FULL_PCT)) out.push({ channelId: c.channelId, asset: c.asset, localRatioPct: pct, flag: "full" });
   }
   return out;
 }

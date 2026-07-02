@@ -28,12 +28,26 @@ export function publicKeyHex(publicKeyString: string): string {
  */
 export const RUN_LIMITS = { max_facts: 1000, max_iterations: 100, max_time_micro: 5_000_000 };
 
-/** True if `e` is a biscuit-wasm run-limit timeout/overflow, not a genuine authorization failure. */
+/**
+ * True if `e` is a biscuit-wasm run-limit timeout/overflow, not a genuine authorization failure.
+ *
+ * Matches ALL `RunLimit` variants biscuit-wasm can throw — `Timeout`, `TooManyFacts`, and
+ * `TooManyIterations` alike — since the check only tests for the `"RunLimit"` key, not its value.
+ * Any of these means the datalog engine gave up before it could reach a verdict.
+ */
 export function isRunLimitError(e: unknown): boolean {
   return typeof e === "object" && e !== null && "RunLimit" in e;
 }
 
-/** Replicates Fiber's per-method authorizer offline: true if the token satisfies policyCode at `now`. */
+/**
+ * Replicates Fiber's per-method authorizer offline: true if the token satisfies policyCode at `now`.
+ *
+ * Exception contract: a thrown error means authorization could NOT be evaluated — the biscuit-wasm
+ * run limit (facts/iterations/time, see RUN_LIMITS) was hit before the datalog engine reached a
+ * verdict either way. This is NOT a policy denial. Callers MUST treat any exception from this
+ * function as "not authorized" (fail closed) and MUST NOT interpret it as "allowed" — there is no
+ * code path in which throwing means the token was accepted.
+ */
 export function authorizeLocally(
   tokenB64: string, publicKeyString: string, policyCode: string, now: Date = new Date()
 ): boolean {

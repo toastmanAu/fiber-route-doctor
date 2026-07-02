@@ -71,6 +71,9 @@ Totals count only ready+enabled channels; excluded channels are listed with the 
 Skew flags: `drained` (<10% local — can't send) and `full` (>90% local — can't receive).
 Snapshots persist raw observations (decimal-string balances, JSON-safe), so diffs stay
 valid as analytics evolve. `--json` emits `{ report, snapshot, diff? }`.
+In `--diff` output, asset deltas track usable (ready+enabled) liquidity while per-channel
+balance deltas compare raw balances regardless of state — so a channel being disabled shifts
+asset totals without producing a per-channel balance delta.
 
 Live validation: `FRD_BISCUIT_KEY=~/.fiber-dt/biscuit_private_key FIBER_RPC_URL=http://127.0.0.1:8231 npm run smoke:liquidity`
 

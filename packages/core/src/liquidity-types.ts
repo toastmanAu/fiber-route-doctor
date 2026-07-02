@@ -47,6 +47,20 @@ export interface LiquidityReport {
   excludedChannels: number;
 }
 
+/**
+ * `balanceDeltas` and `assetDeltas` are NOT measuring the same thing, and can diverge:
+ *
+ * - `balanceDeltas` compares raw local/remote balances across ALL matched channels (present in
+ *   both snapshots by channelId), regardless of state or enabled flag.
+ * - `assetDeltas` compares `outbound`/`inbound` from `computeLiquidityReport`, which only sums
+ *   USABLE liquidity — channels that are ChannelReady AND enabled — per the same `isActive` filter
+ *   used for `LiquidityReport.assets`.
+ *
+ * A channel whose balances are unchanged but flips enabled -> disabled (or ready -> non-ready)
+ * between snapshots will therefore move `assetDeltas` (its capacity drops out of the usable total)
+ * while contributing NOTHING to `balanceDeltas` (no local/remote change to report). Don't treat
+ * `assetDeltas` as a sum of `balanceDeltas` — they're independently derived.
+ */
 export interface LiquidityDiff {
   fromTs: string;
   toTs: string;
