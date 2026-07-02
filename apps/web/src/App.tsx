@@ -3,6 +3,7 @@ import { GraphClient, loadGraph, runDiagnosis, formatReportText, type RouteRepor
 import { buildProbe } from "./probe-form.js";
 import { buildRouteView } from "./route-view.js";
 import { RouteGraph } from "./RouteGraph.js";
+import { HealthPanel } from "./HealthPanel.js";
 
 export function App() {
   const [url, setUrl] = useState("http://127.0.0.1:8227");
@@ -39,6 +40,7 @@ export function App() {
       <button onClick={run} disabled={busy}>{busy ? "diagnosing…" : "Diagnose"}</button>
       {report && <RouteGraph view={buildRouteView(report)} />}
       <pre style={{ background: "#111", color: "#0f0", padding: "1rem", marginTop: "1rem", whiteSpace: "pre-wrap" }}>{out}</pre>
+      <HealthPanel />
     </main>
   );
 }
