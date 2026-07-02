@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { HealthClient, runHealthProbe } from "@fiber-route-doctor/core";
 import { buildHealthView, type HealthView } from "./health-view.js";
 
@@ -9,17 +9,23 @@ export function HealthPanel() {
   const [error, setError] = useState("");
   const [auto, setAuto] = useState(false);
   const [busy, setBusy] = useState(false);
+  const runId = useRef(0);
 
   const run = useCallback(async () => {
+    const id = ++runId.current;
     setBusy(true);
     setError("");
     try {
       const report = await runHealthProbe(new HealthClient({ url, biscuit: token || undefined }));
+      if (id !== runId.current) return;
       setView(buildHealthView(report));
     } catch (e) {
+      if (id !== runId.current) return;
       setView(null);
       setError(String(e));
-    } finally { setBusy(false); }
+    } finally {
+      if (id === runId.current) setBusy(false);
+    }
   }, [url, token]);
 
   useEffect(() => {
