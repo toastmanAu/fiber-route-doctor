@@ -81,7 +81,7 @@ import { checkChannels, type RpcChannel } from "../src/index.js";
 
 function chan(over: Partial<RpcChannel> = {}): RpcChannel {
   return {
-    channel_id: "0x" + "ab".repeat(32), state: { state_name: "ChannelReady" },
+    channel_id: "0x" + "ab".repeat(32), pubkey: "0x02aa", state: { state_name: "ChannelReady" },
     local_balance: "0x3e8", remote_balance: "0x3e8", offered_tlc_balance: "0x0", received_tlc_balance: "0x0",
     enabled: true, is_public: true, pending_tlcs: [], created_at: "0x1",
     funding_udt_type_script: null, failure_detail: null, ...over
