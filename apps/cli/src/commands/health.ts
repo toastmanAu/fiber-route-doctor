@@ -1,4 +1,8 @@
-import { WEBHOOK_FORMATS, type WebhookFormat } from "@fiber-route-doctor/core";
+import { readFileSync } from "node:fs";
+import { homedir } from "node:os";
+import { join } from "node:path";
+import { HealthClient, formatHealthText, runHealthProbe, type CheckStatus, type HealthReport, WEBHOOK_FORMATS, type WebhookFormat } from "@fiber-route-doctor/core";
+import { NodeFsTokenStore, resolveToken } from "@fiber-route-doctor/biscuit";
 
 export interface HealthArgs {
   url: string; biscuit?: string; profile?: string; authTokenFile?: string;
@@ -37,4 +41,42 @@ export function parseHealthArgs(rest: string[]): HealthArgs {
     url, biscuit: flags.get("biscuit"), profile: flags.get("profile"), authTokenFile: flags.get("auth-token-file"),
     json: bools.has("json"), watch, intervalSeconds, webhook, webhookFormat: webhookFormat as WebhookFormat
   };
+}
+
+const PROFILES = join(homedir(), ".config", "fiber-route-doctor", "profiles.json");
+
+export function healthExitCode(verdict: CheckStatus): number {
+  return verdict === "pass" ? 0 : verdict === "warn" ? 1 : 2;
+}
+
+function defaultProbe(args: HealthArgs): Promise<HealthReport> {
+  const token = resolveToken({
+    authToken: args.biscuit,
+    authTokenFile: args.authTokenFile,
+    profile: args.profile,
+    env: process.env,
+    getProfileToken: (n) => new NodeFsTokenStore(PROFILES).get(n)?.token,
+    readFile: (p) => readFileSync(p, "utf8")
+  });
+  return runHealthProbe(new HealthClient({ url: args.url, biscuit: token }));
+}
+
+export interface HealthDeps {
+  probe?: (args: HealthArgs) => Promise<HealthReport>;
+  print?: (s: string) => void;
+}
+
+export async function runHealth(rest: string[], deps: HealthDeps = {}): Promise<number> {
+  const print = deps.print ?? console.log;
+  let args: HealthArgs;
+  try {
+    args = parseHealthArgs(rest);
+  } catch (e) {
+    print(e instanceof Error ? e.message : String(e));
+    return 2;
+  }
+  const probe = deps.probe ?? defaultProbe;
+  const report = await probe(args);
+  print(args.json ? JSON.stringify(report, null, 2) : formatHealthText(report));
+  return healthExitCode(report.verdict);
 }
