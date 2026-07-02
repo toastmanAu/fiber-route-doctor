@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { HealthClient, formatHealthText, runHealthProbe, type CheckStatus, type HealthReport, WEBHOOK_FORMATS, type WebhookFormat } from "@fiber-route-doctor/core";
+import { HealthClient, formatHealthText, runHealthProbe, type CheckStatus, type HealthReport, WEBHOOK_FORMATS, type WebhookFormat, detectTransitions, postAlert, type HealthAlert, type Transition } from "@fiber-route-doctor/core";
 import { NodeFsTokenStore, resolveToken } from "@fiber-route-doctor/biscuit";
 
 export interface HealthArgs {
@@ -66,6 +66,41 @@ export interface HealthDeps {
   print?: (s: string) => void;
 }
 
+export interface WatchOpts {
+  nodeUrl: string; intervalMs: number; webhook?: string; webhookFormat: WebhookFormat; maxTicks?: number;
+}
+
+export interface WatchDeps {
+  probe: () => Promise<HealthReport>;
+  print: (s: string) => void;
+  sleep: (ms: number) => Promise<void>;
+  now: () => Date;
+  post?: typeof postAlert;
+}
+
+export async function watchHealth(opts: WatchOpts, deps: WatchDeps): Promise<void> {
+  const post = deps.post ?? postAlert;
+  let prev: HealthReport | undefined;
+  for (let tick = 0; opts.maxTicks === undefined || tick < opts.maxTicks; tick++) {
+    if (tick > 0) await deps.sleep(opts.intervalMs);
+    const next = await deps.probe();
+    deps.print(formatHealthText(next));
+    if (prev) {
+      const transitions = detectTransitions(prev, next);
+      for (const t of transitions) deps.print(`[${deps.now().toISOString()}] ${t.check}: ${t.from} → ${t.to} (${t.reason})`);
+      if (transitions.length > 0 && opts.webhook) {
+        const alert: HealthAlert = {
+          ts: deps.now().toISOString(), nodeUrl: opts.nodeUrl,
+          verdict: next.verdict, previousVerdict: prev.verdict, transitions, report: next
+        };
+        const delivered = await post(opts.webhook, opts.webhookFormat, alert);
+        if (!delivered) deps.print("warning: webhook delivery failed");
+      }
+    }
+    prev = next;
+  }
+}
+
 export async function runHealth(rest: string[], deps: HealthDeps = {}): Promise<number> {
   const print = deps.print ?? console.log;
   let args: HealthArgs;
@@ -76,6 +111,13 @@ export async function runHealth(rest: string[], deps: HealthDeps = {}): Promise<
     return 2;
   }
   const probe = deps.probe ?? defaultProbe;
+  if (args.watch) {
+    await watchHealth(
+      { nodeUrl: args.url, intervalMs: args.intervalSeconds * 1000, webhook: args.webhook, webhookFormat: args.webhookFormat },
+      { probe: () => probe(args), print, sleep: (ms) => new Promise((r) => setTimeout(r, ms)), now: () => new Date() }
+    );
+    return 0;
+  }
   const report = await probe(args);
   print(args.json ? JSON.stringify(report, null, 2) : formatHealthText(report));
   return healthExitCode(report.verdict);
