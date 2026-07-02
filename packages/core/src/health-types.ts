@@ -17,6 +17,8 @@ export interface RpcPeerInfo { pubkey: Hex; address: string; }
 export interface RpcChannelState { state_name: string; state_flags?: unknown; }
 export interface RpcChannel {
   channel_id: Hex;
+  /** The counterparty's identity public key. */
+  pubkey: Hex;
   state: RpcChannelState;
   local_balance: Hex;         // u128 hex
   remote_balance: Hex;        // u128 hex

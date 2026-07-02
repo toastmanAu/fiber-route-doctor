@@ -52,6 +52,31 @@ Auth uses the same token resolution as `diagnose`: `--biscuit`, `--auth-token-fi
 
 Live validation: `FRD_BISCUIT_KEY=~/.fiber-dt/biscuit_private_key FIBER_RPC_URL=http://127.0.0.1:8231 npm run smoke:health`
 
+## Channel Liquidity Snapshot
+
+What can this node send and receive right now, per asset — and how has it changed?
+
+```bash
+# report: per-asset totals, per-channel balance bars, skew flags, per-peer summary
+fiber-route-doctor liquidity --profile driveThree --url http://127.0.0.1:8231
+
+# save a timestamped snapshot (~/.config/fiber-route-doctor/snapshots/)
+fiber-route-doctor liquidity --profile driveThree --url http://127.0.0.1:8231 --save
+
+# what changed since the last saved snapshot? (then save the new baseline)
+fiber-route-doctor liquidity --profile driveThree --url http://127.0.0.1:8231 --diff --save
+```
+
+Totals count only ready+enabled channels; excluded channels are listed with the reason.
+Skew flags: `drained` (<10% local — can't send) and `full` (>90% local — can't receive).
+Snapshots persist raw observations (decimal-string balances, JSON-safe), so diffs stay
+valid as analytics evolve. `--json` emits `{ report, snapshot, diff? }`.
+In `--diff` output, asset deltas track usable (ready+enabled) liquidity while per-channel
+balance deltas compare raw balances regardless of state — so a channel being disabled shifts
+asset totals without producing a per-channel balance delta.
+
+Live validation: `FRD_BISCUIT_KEY=~/.fiber-dt/biscuit_private_key FIBER_RPC_URL=http://127.0.0.1:8231 npm run smoke:liquidity`
+
 ## Live smoke
 See [docs/demo-node.md](docs/demo-node.md). Requires a reachable Fiber v0.9 node.
 
