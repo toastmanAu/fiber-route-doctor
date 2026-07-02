@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { HealthClient, formatHealthText, runHealthProbe, type CheckStatus, type HealthReport, WEBHOOK_FORMATS, type WebhookFormat, detectTransitions, postAlert, type HealthAlert, type Transition } from "@fiber-route-doctor/core";
+import { HealthClient, formatHealthText, runHealthProbe, type CheckStatus, type HealthReport, WEBHOOK_FORMATS, type WebhookFormat, detectTransitions, postAlert, type HealthAlert } from "@fiber-route-doctor/core";
 import { NodeFsTokenStore, resolveToken } from "@fiber-route-doctor/biscuit";
 
 export interface HealthArgs {
@@ -83,7 +83,13 @@ export async function watchHealth(opts: WatchOpts, deps: WatchDeps): Promise<voi
   let prev: HealthReport | undefined;
   for (let tick = 0; opts.maxTicks === undefined || tick < opts.maxTicks; tick++) {
     if (tick > 0) await deps.sleep(opts.intervalMs);
-    const next = await deps.probe();
+    let next: HealthReport;
+    try {
+      next = await deps.probe();
+    } catch (e) {
+      deps.print(`warning: probe failed: ${e instanceof Error ? e.message : String(e)}`);
+      continue;
+    }
     deps.print(formatHealthText(next));
     if (prev) {
       const transitions = detectTransitions(prev, next);
