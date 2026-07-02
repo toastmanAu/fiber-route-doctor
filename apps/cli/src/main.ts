@@ -9,6 +9,7 @@ import { parseCommand } from "./dispatch.js";
 import { runKeys } from "./commands/keys.js";
 import { runToken } from "./commands/token.js";
 import { runHealth } from "./commands/health.js";
+import { runLiquidity } from "./commands/liquidity.js";
 
 async function main() {
   const { command, rest } = parseCommand(process.argv.slice(2));
@@ -16,6 +17,7 @@ async function main() {
   if (command === "keys") process.exit(await runKeys(rest));
   if (command === "token") process.exit(await runToken(rest));
   if (command === "health") process.exit(await runHealth(rest));
+  if (command === "liquidity") process.exit(await runLiquidity(rest));
 
   const args = parseArgs(rest);
   const PROFILES = join(homedir(), ".config", "fiber-route-doctor", "profiles.json");
