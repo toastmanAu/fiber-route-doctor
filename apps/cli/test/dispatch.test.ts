@@ -17,4 +17,7 @@ describe("parseCommand", () => {
   it("routes the health command", () => {
     expect(parseCommand(["health", "--url", "u"])).toEqual({ command: "health", rest: ["--url", "u"] });
   });
+  it("routes the liquidity command", () => {
+    expect(parseCommand(["liquidity", "--url", "u"])).toEqual({ command: "liquidity", rest: ["--url", "u"] });
+  });
 });
