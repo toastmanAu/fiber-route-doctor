@@ -11,6 +11,9 @@ export function hasKeystore(ks: BrowserKeystore): Promise<boolean> {
   return ks.load().then((k) => k !== undefined);
 }
 
+/** Structural keystore failures (bad kdf, out-of-range scrypt params) are corruption, not a wrong passphrase. */
+const STRUCTURAL_KEYSTORE_ERROR = /keystore (kdf|scrypt)/;
+
 /** Decrypt the stored secret for the duration of ONE operation. Wrong passphrase → "incorrect passphrase". */
 async function withSecret<T>(ks: BrowserKeystore, passphrase: string, run: (secret: string, kind: KeystoreKind) => T): Promise<T> {
   const file = await ks.load();
@@ -18,11 +21,14 @@ async function withSecret<T>(ks: BrowserKeystore, passphrase: string, run: (secr
   let secret: string;
   try {
     secret = decryptSecret(file, passphrase);
-  } catch {
+  } catch (err) {
+    if (err instanceof Error && STRUCTURAL_KEYSTORE_ERROR.test(err.message)) throw err;
     throw new Error("incorrect passphrase");
   }
   return run(secret, file.kind);
 }
+
+const MINT_SCOPES: ReadonlyArray<MintRequest["scope"]> = ["readonly", "invoicing", "full"];
 
 export async function createWallet(ks: BrowserKeystore, passphrase: string): Promise<{ mnemonic: string; publicKeyString: string }> {
   const mnemonic = newMnemonic();
@@ -47,6 +53,8 @@ export interface MintRequest {
 }
 
 export async function mint(ks: BrowserKeystore, req: MintRequest, profiles: BrowserProfileStore): Promise<BrowserTokenProfile> {
+  if (!Number.isInteger(req.expiryDays) || req.expiryDays < 1) throw new Error("expiryDays must be a positive integer");
+  if (!MINT_SCOPES.includes(req.scope)) throw new Error("invalid scope");
   return withSecret(ks, req.passphrase, (secret, kind) => {
     const key = kind === "mnemonic" ? deriveFromMnemonic(secret) : importPrivateKeyString(secret);
     const expiry = new Date(Date.now() + req.expiryDays * MS_PER_DAY);

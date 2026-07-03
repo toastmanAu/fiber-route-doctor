@@ -58,4 +58,27 @@ describe("vault custody", () => {
     await importWallet(ks, "ed25519-private/" + "cd".repeat(32), "privatekey", "pw");
     await expect(exportMnemonic(ks, "pw")).rejects.toThrow(/no seed phrase/);
   });
+  it("a corrupt keystore (bad scrypt N) is reported distinctly from a wrong passphrase", async () => {
+    const ks = new IdbKeystore();
+    await ks.clear();
+    await createWallet(ks, "pw");
+    const file = await ks.load();
+    if (!file) throw new Error("test setup failed: no keystore file");
+    await ks.save({ ...file, N: 3 });
+    await expect(exportMnemonic(ks, "pw")).rejects.toThrow(/keystore scrypt N/);
+  });
+  it("mint rejects a non-positive-integer expiryDays", async () => {
+    const ks = new IdbKeystore();
+    await ks.clear();
+    await createWallet(ks, "pw");
+    const profiles = new IdbProfileStore();
+    await expect(mint(ks, { passphrase: "pw", scope: "readonly", expiryDays: 0, url: "u", profileName: "x" }, profiles)).rejects.toThrow(/expiryDays/);
+  });
+  it("mint rejects an invalid scope", async () => {
+    const ks = new IdbKeystore();
+    await ks.clear();
+    await createWallet(ks, "pw");
+    const profiles = new IdbProfileStore();
+    await expect(mint(ks, { passphrase: "pw", scope: "bogus" as any, expiryDays: 30, url: "u", profileName: "x" }, profiles)).rejects.toThrow(/scope/);
+  });
 });
