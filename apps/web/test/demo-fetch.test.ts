@@ -47,4 +47,55 @@ describe("pickDemoRoute", () => {
     const r = pickDemoRoute(chans);
     expect(r).toEqual({ source: "0xcc", target: "0xdd", amount: "1000" });
   });
+
+  it("requires the node1->node2 direction specifically, not either direction", () => {
+    const chans = [
+      // higher capacity, but only node2->node1 is enabled: direct source->target route would NOT exist
+      {
+        channel_outpoint: "0x1",
+        node1: "0xaa",
+        node2: "0xbb",
+        capacity: "0xc8",
+        udt_type_script: null,
+        update_info_of_node1: null,
+        update_info_of_node2: { timestamp: "0x1", enabled: true, fee_rate: "0x0", tlc_expiry_delta: "0x0", tlc_minimum_value: "0x0" }
+      },
+      // lower capacity, but node1->node2 IS enabled: this is the only one that guarantees a direct payable route
+      {
+        channel_outpoint: "0x2",
+        node1: "0xcc",
+        node2: "0xdd",
+        capacity: "0x64",
+        udt_type_script: null,
+        update_info_of_node1: { timestamp: "0x1", enabled: true, fee_rate: "0x0", tlc_expiry_delta: "0x0", tlc_minimum_value: "0x0" },
+        update_info_of_node2: null
+      }
+    ] as RpcChannelInfo[];
+    const r = pickDemoRoute(chans);
+    expect(r).toEqual({ source: "0xcc", target: "0xdd", amount: "1000" });
+  });
+
+  it("falls back to the highest-capacity CKB channel when none has node1->node2 enabled", () => {
+    const chans = [
+      { channel_outpoint: "0x1", node1: "0xaa", node2: "0xbb", capacity: "0x64", udt_type_script: null, update_info_of_node1: null, update_info_of_node2: null },
+      { channel_outpoint: "0x2", node1: "0xcc", node2: "0xdd", capacity: "0xc8", udt_type_script: null, update_info_of_node1: null, update_info_of_node2: null }
+    ] as RpcChannelInfo[];
+    const r = pickDemoRoute(chans);
+    expect(r).toEqual({ source: "0xcc", target: "0xdd", amount: "1000" });
+  });
+
+  it("falls back to the highest-capacity channel overall when there are no CKB channels", () => {
+    const udt = { code_hash: "0x1", hash_type: "type", args: "0x2" };
+    const chans = [
+      { channel_outpoint: "0x1", node1: "0xaa", node2: "0xbb", capacity: "0x64", udt_type_script: udt, update_info_of_node1: null, update_info_of_node2: null },
+      { channel_outpoint: "0x2", node1: "0xcc", node2: "0xdd", capacity: "0xc8", udt_type_script: udt, update_info_of_node1: null, update_info_of_node2: null }
+    ] as RpcChannelInfo[];
+    const r = pickDemoRoute(chans);
+    expect(r).toEqual({ source: "0xcc", target: "0xdd", amount: "1000" });
+  });
+
+  it("returns an empty route instead of throwing when given an empty channel list", () => {
+    expect(() => pickDemoRoute([])).not.toThrow();
+    expect(pickDemoRoute([])).toEqual({ source: "", target: "", amount: "1000" });
+  });
 });

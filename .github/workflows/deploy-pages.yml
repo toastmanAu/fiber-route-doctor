@@ -26,10 +26,13 @@ jobs:
         with:
           node-version: "22"
       - run: npm ci
+      - run: npm test
       - run: npm run build --workspace @fiber-route-doctor/web
       - name: Verify base path in build
         run: grep -q "/fiber-route-doctor/assets/" apps/web/dist/index.html
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: apps/web/dist

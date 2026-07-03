@@ -17,19 +17,34 @@ export const demoFetch: typeof fetch = async (_input, init) => {
 };
 
 const DEMO_AMOUNT_VALUE = "1000";
+const EMPTY_ROUTE = { source: "", target: "", amount: DEMO_AMOUNT_VALUE };
 
-/** Endpoints of the highest-capacity channel — guarantees a direct route exists. */
-export function pickDemoRoute(channels: RpcChannelInfo[]): { source: string; target: string; amount: string } {
-  const ckbEnabled = channels.filter(
-    (c) => c.udt_type_script === null && (c.update_info_of_node1?.enabled || c.update_info_of_node2?.enabled)
-  );
-  const pool = ckbEnabled.length > 0 ? ckbEnabled : channels;
+function highestCapacity(pool: RpcChannelInfo[]): RpcChannelInfo {
   let best = pool[0];
   for (const c of pool) if (BigInt(c.capacity) > BigInt(best.capacity)) best = c;
+  return best;
+}
+
+/**
+ * Endpoints of a channel that guarantees a direct, payable source->target route.
+ *
+ * The returned route always sets source=node1, target=node2, and the direct
+ * source->target edge is derived from `update_info_of_node1` — so the pool
+ * MUST be filtered to channels where that specific direction is enabled,
+ * not "either direction enabled".
+ */
+export function pickDemoRoute(channels: RpcChannelInfo[]): { source: string; target: string; amount: string } {
+  if (channels.length === 0) return EMPTY_ROUTE;
+
+  const ckbChannels = channels.filter((c) => c.udt_type_script === null);
+  const directPayable = ckbChannels.filter((c) => c.update_info_of_node1?.enabled === true);
+
+  const pool = directPayable.length > 0 ? directPayable : ckbChannels.length > 0 ? ckbChannels : channels;
+  const best = highestCapacity(pool);
   return { source: best.node1, target: best.node2, amount: DEMO_AMOUNT_VALUE };
 }
 
-const route = pickDemoRoute(fixtures.graphChannels as any);
+const route = pickDemoRoute(fixtures.graphChannels as unknown as RpcChannelInfo[]);
 export const DEMO_SOURCE = route.source;
 export const DEMO_TARGET = route.target;
 export const DEMO_AMOUNT = route.amount;

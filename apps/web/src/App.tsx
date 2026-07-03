@@ -23,7 +23,11 @@ export function App() {
 
   function toggleDemo(on: boolean) {
     setDemo(on);
-    if (on) { setSource(DEMO_SOURCE); setTarget(DEMO_TARGET); setAmount(DEMO_AMOUNT); setAsset(""); }
+    if (on) {
+      setSource(DEMO_SOURCE); setTarget(DEMO_TARGET); setAmount(DEMO_AMOUNT); setAsset("");
+    } else {
+      setSource(""); setTarget(""); setAmount("1000");
+    }
   }
 
   async function run() {
@@ -46,7 +50,7 @@ export function App() {
         {import.meta.env.PROD && (
           <div style={{ background: "#0d1b2a", border: "1px solid #3498db", padding: "0.6rem", marginBottom: "1rem", fontSize: 13 }}>
             The wallet below is fully live in your browser (create a key, mint a real biscuit token — no backend).
-            Toggle <strong>Demo data</strong> to explore a real 246-node / 650-channel testnet snapshot with no node.
+            Toggle <strong>Demo data</strong> to explore a real 213-node / 650-channel testnet snapshot with no node.
             Live queries against your own node need the CLI or a CORS-enabled node — see the{" "}
             <a href="https://github.com/toastmanAu/fiber-route-doctor" style={{ color: "#3498db" }}>README</a> and{" "}
             <a href="https://github.com/toastmanAu/fiber-route-doctor/blob/master/docs/GAP-ANALYSIS.md" style={{ color: "#3498db" }}>gap analysis</a>.
