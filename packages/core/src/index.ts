@@ -21,3 +21,4 @@ export * from "./format.js";
 export * from "./route-doctor.js";
 export * from "./network-map-types.js";
 export * from "./network-map.js";
+export * from "./network-map-style.js";
