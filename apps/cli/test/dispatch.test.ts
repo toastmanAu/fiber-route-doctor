@@ -20,4 +20,7 @@ describe("parseCommand", () => {
   it("routes the liquidity command", () => {
     expect(parseCommand(["liquidity", "--url", "u"])).toEqual({ command: "liquidity", rest: ["--url", "u"] });
   });
+  it("routes the map command", () => {
+    expect(parseCommand(["map", "--url", "u"])).toEqual({ command: "map", rest: ["--url", "u"] });
+  });
 });
