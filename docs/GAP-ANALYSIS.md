@@ -42,11 +42,11 @@ fnn requires biscuit authentication on any publicly-bound RPC listener and verif
 
 ```rust
 b.rule("list_channels", r#"allow if read("channels");"#);
-b.rule("graph_nodes",  r#"allow if read("graph");"#);
-b.rule("node_info",    r#"allow if read("node");"#);
+b.rule("graph_nodes", r#"allow if read("graph");"#);
+b.rule("node_info", r#"allow if read("node");"#);
 ```
 
-That is a sound design — scoped, capability-style tokens per RPC method. The gap: **nothing in the shipped tooling mints those tokens.** We searched the fiber-cli command surface of the research snapshot for any `token` or `mint` subcommand: none exists; `fiber-cli` only *consumes* tokens (`--auth-token`, `--auth-token-file`, `FNN_AUTH_TOKEN`) (version scope: corpus ≤ v0.9.0-rc5). An operator who binds a public listener — which mainstream deployment requires — is left to discover the biscuit-wasm API themselves, along with its sharp edges (trap 7, §4).
+That is a sound design — scoped, capability-style tokens per RPC method, and it is genuinely mandatory: the node refuses to start a publicly-bound listener without a biscuit public key (`crates/fiber-lib/src/rpc/mod.rs`, "Cannot listen on a public address without a biscuit public key"). The gap: **nothing in the shipped tooling mints those tokens.** We searched the fiber-cli command surface of the research snapshot for any `token` or `mint` subcommand: none exists; `fiber-cli` only *consumes* tokens (`--auth-token`, `--auth-token-file`, `FNN_AUTH_TOKEN`) (version scope: corpus ≤ v0.9.0-rc5). An operator who binds a public listener — which mainstream deployment requires — is left to discover the biscuit-wasm API themselves, along with its sharp edges (trap 7, §4).
 
 **What we built.** A full credential lifecycle: BIP39 mnemonic → SLIP-0010 Ed25519 derivation (path `m/44'/1'/0'`) → biscuit key; an encrypted keystore (scrypt N=2¹⁵ + XChaCha20-Poly1305, files written 0600 via atomic temp-and-rename); scoped token minting with `readonly` / `invoicing` / `full` templates that mirror fnn's own datalog facts; token profiles; and offline token inspection.
 
@@ -68,7 +68,7 @@ The API surface also hides a genuine trap that doubles as a documentation gap: *
 | | |
 |---|---|
 | **Upstream ask** | A dry-run / route-explain RPC returning structured failure causes |
-| **Toolkit today** | `fiber-route-doctor diagnose --source … --target … --amount …` |
+| **Toolkit today** | `fiber-route-doctor diagnose --url … --source … --target … --amount …` |
 
 ### Gap 3: Health & readiness — no endpoint, undocumented auth semantics
 
@@ -86,7 +86,7 @@ Meanwhile a node deployed behind a reverse proxy doing its own auth *will* retur
 
 **What we built.** A health probe running five checks — reachability, authentication, node info, peer connectivity, channel health — each returning pass/warn/fail with a reason and a concrete fix, composed into a worst-status verdict with scriptable exit codes (0/1/2). It classifies both auth-rejection shapes (`-32999` and HTTP 401/403) as auth failures, not transport failures. A `--watch` mode re-probes on an interval and fires **edge-triggered webhooks** (generic/Slack/Discord) only when a check changes status.
 
-**Live proof.** The probe's first live verdict was a true positive — it caught our own node's isolation: *"✗ Peer connectivity — 0 peers — node is isolated (no gossip, no routing)"* on *"fnn v0.7.1"*.
+**Live proof.** The probe's first live verdict was a true positive — it caught our own node's isolation: *"✗ Peer connectivity  0 peers — node is isolated (no gossip, no routing)"* on *"fnn v0.7.1"*.
 
 | | |
 |---|---|
@@ -110,7 +110,7 @@ Meanwhile a node deployed behind a reverse proxy doing its own auth *will* retur
 
 The gossip store persists independently of connectivity. Our node reported **hundreds of gossiped channels while having zero peers** — `graph_channels` full of data, `list_peers` empty. To a new operator the network "looks fine" precisely while their node can route nothing, receive nothing, and settle nothing. No log line, no `node_info` field, nothing warns that the node is isolated; and getting un-isolated means manually finding a peer multiaddr for `connect_peer`, with no documented starter peers.
 
-The same shape confuses in a second way: `graph_channels` (the network's gossip) versus `list_channels` (your own channels) is the #1 new-operator conflation — "the node shows 500 channels" and "the node has 0 channels" are simultaneously true (trap 5, §4).
+The same shape confuses in a second way: `graph_channels` (the network's gossip) versus `list_channels` (your own channels) is the #1 new-operator conflation — "the node shows 650 channels" and "the node has 0 channels" are simultaneously true (trap 5, §4).
 
 **What we built.** A network map — pure topology model plus a deterministic force-directed layout (same graph in, same map out) — rendered two ways: an interactive web panel (pan/zoom, node details, top-10 hubs, and an overlay that draws Route Doctor's diagnosed path onto the live topology) and a CLI export producing a fully self-contained HTML file, hostable as-is. The health probe (§Gap 3) flags isolation explicitly.
 
@@ -131,13 +131,13 @@ Everything below was hit while building the toolkit, and each entry gives the sh
 | 2 | `-32999` over HTTP 200 | Auth failures diagnosed as outages | RPC/auth |
 | 3 | Version drift (v0.7.1 vs v0.9.0-rc5) | Docs describe a node you aren't running | Ops |
 | 4 | Two fee scales (ppm vs per-thousand) | Fees mis-priced ×1000 | API semantics |
-| 5 | Gossiped graph ≠ your channels | "500 channels" on a channel-less node | Mental model |
-| 6 | Silent 500-row page cap | Truncated graph, no error | RPC pagination |
+| 5 | Gossiped graph ≠ your channels | "650 channels" on a channel-less node | Mental model |
+| 6 | Silent 500-row default page size | Truncated graph, no error | RPC pagination |
 | 7 | biscuit-wasm run-limit (ecosystem) | Valid tokens reported as denied under load | Client library |
 
 ### Trap 1 — IPv4-only bind vs `localhost`
 
-The node binds its RPC listener on IPv4 (`0.0.0.0`). Modern Node.js `fetch` resolves `localhost` to `::1` (IPv6) first, so a client using `localhost` gets a connection refusal — surfaced only as a generic *"fetch failed"* — while the node is running and reachable.
+With the typical configuration (ours included), the node binds its RPC listener on IPv4 (`0.0.0.0`; the listen address is config-driven). Modern Node.js `fetch` resolves `localhost` to `::1` (IPv6) first, so a client using `localhost` gets a connection refusal — surfaced only as a generic *"fetch failed"* — while the node is running and reachable.
 
 ```bash
 FIBER_RPC_URL=http://localhost:8231  npm run smoke:health   # ✗ "no RPC call reached the node: fetch failed"
@@ -181,7 +181,7 @@ fiber-route-doctor liquidity --profile dt --url http://127.0.0.1:8231           
 
 ### Trap 6 — The silent 500-row page cap
 
-`graph_nodes` and `graph_channels` **do** paginate: params accept `limit` and `after`, responses carry `last_cursor`, and the server caps each page at `default_max_limit = 500` (`crates/fiber-lib/src/rpc/graph.rs`). The trap is that the obvious call shape — empty params — silently returns at most 500 rows with no error and no "truncated" flag; the only signal is a full page plus a cursor it is very easy to ignore.
+`graph_nodes` and `graph_channels` **do** paginate: params accept `limit` and `after`, responses carry `last_cursor`, and when no `limit` is given the server defaults the page size to `default_max_limit = 500` (`crates/fiber-lib/src/rpc/graph.rs` — a default via `unwrap_or`, not an enforced cap). The trap is that the obvious call shape — empty params — silently returns at most 500 rows with no error and no "truncated" flag; the only signal is a full page plus a cursor it is very easy to ignore.
 
 We speak from experience: **we shipped four tools before noticing.** Every "500 channels" figure in our earlier live validations was exactly the page cap; the real network had 650. Our client now follows `last_cursor` until a short page (fixed with a red-green test: 500 → 650). Upstream, a one-line doc callout — or a `truncated: true` hint — would save every future client author this mistake.
 
