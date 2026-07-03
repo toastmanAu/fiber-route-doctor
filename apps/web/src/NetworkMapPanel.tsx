@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { HealthClient, buildNetworkMapModel, computeLayout, type NetworkMapModel, type MapNode } from "@fiber-route-doctor/core";
 import { buildNetworkMapView } from "./network-map-view.js";
 import { useWallet } from "./wallet-context.js";
@@ -21,6 +21,7 @@ export function NetworkMapPanel({ routeOutpoints }: { routeOutpoints: string[] }
   const [viewBox, setViewBox] = useState({ x: 0, y: 0, w: W, h: H });
   const drag = useRef<{ x: number; y: number } | null>(null);
   const runId = useRef(0);
+  const svgRef = useRef<SVGSVGElement | null>(null);
 
   async function load() {
     const id = ++runId.current;
@@ -46,14 +47,23 @@ export function NetworkMapPanel({ routeOutpoints }: { routeOutpoints: string[] }
   const positions = useMemo(() => (model ? computeLayout(model, { width: W, height: H }) : null), [model]);
   const view = useMemo(() => (model && positions ? buildNetworkMapView(model, positions, routeOutpoints) : null), [model, positions, routeOutpoints]);
 
-  function onWheel(e: React.WheelEvent) {
-    const factor = e.deltaY > 0 ? 1.2 : 1 / 1.2;
-    setViewBox((v) => {
-      const w = Math.min(W * 5, Math.max(W / 5, v.w * factor));
-      const h = (w / W) * H;
-      return { x: v.x + (v.w - w) / 2, y: v.y + (v.h - h) / 2, w, h };
-    });
-  }
+  // Native non-passive wheel listener: React's synthetic onWheel binds passively,
+  // so preventDefault there is a no-op and the page scrolls while zooming.
+  useEffect(() => {
+    const el = svgRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const factor = e.deltaY > 0 ? 1.2 : 1 / 1.2;
+      setViewBox((v) => {
+        const w = Math.min(W * 5, Math.max(W / 5, v.w * factor));
+        const h = (w / W) * H;
+        return { x: v.x + (v.w - w) / 2, y: v.y + (v.h - h) / 2, w, h };
+      });
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, [view]);
   function onPointerDown(e: React.PointerEvent) { drag.current = { x: e.clientX, y: e.clientY }; }
   function onPointerMove(e: React.PointerEvent) {
     if (!drag.current) return;
@@ -86,9 +96,10 @@ export function NetworkMapPanel({ routeOutpoints }: { routeOutpoints: string[] }
       {model && view && !view.empty && (
         <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
           <svg
+            ref={svgRef}
             width={W} height={H} viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`}
             style={{ background: "#111", border: "1px solid #444", cursor: "grab", touchAction: "none" }}
-            onWheel={onWheel} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerLeave={onPointerUp}
+            onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerLeave={onPointerUp}
           >
             {view.edges.map((e) => (
               <line key={e.outpoint} x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2}
