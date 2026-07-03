@@ -5,7 +5,7 @@ import { useWallet } from "./wallet-context.js";
 
 const W = 900, H = 620;
 
-export function NetworkMapPanel({ routeOutpoints }: { routeOutpoints: string[] }) {
+export function NetworkMapPanel({ routeOutpoints, fetchOverride }: { routeOutpoints: string[]; fetchOverride?: typeof fetch }) {
   const { profiles } = useWallet();
   const [url, setUrl] = useState("http://127.0.0.1:8231");
   const [token, setToken] = useState("");
@@ -28,7 +28,7 @@ export function NetworkMapPanel({ routeOutpoints }: { routeOutpoints: string[] }
     setBusy(true);
     setError("");
     try {
-      const client = new HealthClient({ url, biscuit: token || undefined });
+      const client = new HealthClient({ url, biscuit: token || undefined, fetchImpl: fetchOverride });
       const [nodes, channels] = await Promise.all([client.graphNodes(), client.graphChannels()]);
       const ownPubkey = token ? await client.nodeInfo().then((n) => n.pubkey).catch(() => undefined) : undefined;
       if (id !== runId.current) return;

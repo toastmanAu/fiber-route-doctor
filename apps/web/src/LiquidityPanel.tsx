@@ -3,7 +3,7 @@ import { HealthClient, buildLiquiditySnapshot, computeLiquidityReport } from "@f
 import { buildLiquidityView, type LiquidityView } from "./liquidity-view.js";
 import { useWallet } from "./wallet-context.js";
 
-export function LiquidityPanel() {
+export function LiquidityPanel({ fetchOverride }: { fetchOverride?: typeof fetch }) {
   const { profiles } = useWallet();
   const [url, setUrl] = useState("http://127.0.0.1:8231");
   const [token, setToken] = useState("");
@@ -20,7 +20,7 @@ export function LiquidityPanel() {
     setBusy(true);
     setError("");
     try {
-      const channels = await new HealthClient({ url, biscuit: token || undefined }).listChannels();
+      const channels = await new HealthClient({ url, biscuit: token || undefined, fetchImpl: fetchOverride }).listChannels();
       const snapshot = buildLiquiditySnapshot(channels, url, new Date().toISOString());
       setView(buildLiquidityView(computeLiquidityReport(snapshot), snapshot));
     } catch (e) {
