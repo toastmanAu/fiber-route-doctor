@@ -16,6 +16,7 @@ export function WalletPanel() {
   const [reveal, setReveal] = useState<string | null>(null);   // one-time mnemonic display
   const [importText, setImportText] = useState("");
   const [importKind, setImportKind] = useState<"mnemonic" | "privatekey">("mnemonic");
+  const [showImport, setShowImport] = useState(false);
   const [scope, setScope] = useState<"readonly" | "invoicing" | "full">("readonly");
   const [expiryDays, setExpiryDays] = useState("30");
   const [url, setUrl] = useState("http://127.0.0.1:8231");
@@ -36,7 +37,7 @@ export function WalletPanel() {
   });
   const doImport = () => guard(async () => {
     await importWallet(ks, importText, importKind, pass);
-    setImportText(""); setHas(true);
+    setImportText(""); setShowImport(false); setHas(true);
   });
   const doMint = () => guard(async () => {
     await mint(ks, { passphrase: pass, scope, expiryDays: Number(expiryDays), url, profileName }, profileStore);
@@ -75,7 +76,8 @@ export function WalletPanel() {
               <option value="mnemonic">mnemonic</option>
               <option value="privatekey">hex key</option>
             </select>
-            <input value={importText} onChange={(e) => setImportText(e.target.value)} placeholder="24 words or ed25519-private/…" style={{ width: 360 }} />
+            <input type={showImport ? "text" : "password"} value={importText} onChange={(e) => setImportText(e.target.value)} placeholder="24 words or ed25519-private/…" style={{ width: 360 }} />
+            <label style={{ fontSize: 12 }}><input type="checkbox" checked={showImport} onChange={(e) => setShowImport(e.target.checked)} /> show</label>
             <button onClick={doImport} disabled={busy || !pass || !importText}>Import</button>
           </div>
         </div>
