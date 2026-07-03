@@ -24,4 +24,10 @@ describe("idb wrapper", () => {
     expect(await idbGet("keystore", "default")).toEqual({ k: 1 });
     expect(await idbGet("profiles", "default")).toEqual({ p: 2 });
   });
+  it("a put resolves only after the write transaction commits — a fresh connection can read it back immediately", async () => {
+    await idbPut("profiles", "committed", { name: "committed" });
+    // A brand-new connection/transaction can only see committed data, never
+    // data that is merely "request succeeded but transaction not yet committed."
+    expect(await idbGet<{ name: string }>("profiles", "committed")).toEqual({ name: "committed" });
+  });
 });

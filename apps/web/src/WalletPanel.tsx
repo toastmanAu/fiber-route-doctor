@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from "react";
 import {
   IdbKeystore, IdbProfileStore, hasKeystore, createWallet, importWallet, mint, exportMnemonic,
-  type BrowserTokenProfile
+  inspectToken, type BrowserTokenProfile
 } from "@fiber-route-doctor/biscuit/browser";
-import { inspectToken } from "@fiber-route-doctor/biscuit";
 import { useWallet } from "./wallet-context.js";
 
 const ks = new IdbKeystore();
@@ -13,6 +12,7 @@ export function WalletPanel() {
   const { profiles, refreshProfiles, setActiveProfile } = useWallet();
   const [has, setHas] = useState<boolean | null>(null);
   const [pass, setPass] = useState("");
+  const [exportPass, setExportPass] = useState("");
   const [reveal, setReveal] = useState<string | null>(null);   // one-time mnemonic display
   const [importText, setImportText] = useState("");
   const [importKind, setImportKind] = useState<"mnemonic" | "privatekey">("mnemonic");
@@ -28,7 +28,7 @@ export function WalletPanel() {
 
   async function guard(run: () => Promise<void>) {
     setBusy(true); setError("");
-    try { await run(); } catch (e) { setError(String(e)); } finally { setBusy(false); setPass(""); }
+    try { await run(); } catch (e) { setError(String(e)); } finally { setBusy(false); setPass(""); setExportPass(""); }
   }
 
   const doCreate = () => guard(async () => {
@@ -43,7 +43,7 @@ export function WalletPanel() {
     await mint(ks, { passphrase: pass, scope, expiryDays: Number(expiryDays), url, profileName }, profileStore);
     await refreshProfiles();
   });
-  const doExport = () => guard(async () => { setReveal(await exportMnemonic(ks, pass)); });
+  const doExport = () => guard(async () => { setReveal(await exportMnemonic(ks, exportPass)); });
   const doRemove = () => guard(async () => {
     if (!confirm("Remove this wallet? The encrypted key is deleted from this browser.")) return;
     await ks.clear(); setHas(false);
@@ -107,8 +107,8 @@ export function WalletPanel() {
             ))}
           </ul>
           <div style={{ marginTop: "1rem", display: "flex", gap: "0.6rem", alignItems: "center" }}>
-            <input type="password" value={pass} onChange={(e) => setPass(e.target.value)} placeholder="passphrase" />
-            <button onClick={doExport} disabled={busy || !pass}>Export seed phrase</button>
+            <input type="password" value={exportPass} onChange={(e) => setExportPass(e.target.value)} placeholder="passphrase" />
+            <button onClick={doExport} disabled={busy || !exportPass}>Export seed phrase</button>
             <button onClick={doRemove} disabled={busy} style={{ color: "#e74c3c" }}>Remove wallet</button>
           </div>
         </div>

@@ -74,6 +74,16 @@ describe("vault custody", () => {
     const profiles = new IdbProfileStore();
     await expect(mint(ks, { passphrase: "pw", scope: "readonly", expiryDays: 0, url: "u", profileName: "x" }, profiles)).rejects.toThrow(/expiryDays/);
   });
+  it("mint round-trips through a privatekey-kind wallet (re-derivation branch)", async () => {
+    const ks = new IdbKeystore();
+    await ks.clear();
+    const { publicKeyString } = await importWallet(ks, "ed25519-private/" + "ef".repeat(32), "privatekey", "pw");
+    const profiles = new IdbProfileStore();
+    const p = await mint(ks, { passphrase: "pw", scope: "readonly", expiryDays: 30, url: "http://n:8231", profileName: "pk" }, profiles);
+    expect(p).toMatchObject({ name: "pk", url: "http://n:8231", scope: "readonly", publicKeyString });
+    const facts = inspectToken(p.token, publicKeyString).facts;
+    expect(facts).toContain('read("channels")');
+  });
   it("mint rejects an invalid scope", async () => {
     const ks = new IdbKeystore();
     await ks.clear();

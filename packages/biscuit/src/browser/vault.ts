@@ -1,7 +1,7 @@
-import {
-  deriveFromMnemonic, encryptSecret, decryptSecret, importPrivateKeyString,
-  mintToken, newMnemonic, scopeFacts, type KeystoreKind
-} from "../index.js";
+import { newMnemonic, deriveFromMnemonic, importPrivateKeyString } from "../keys.js";
+import { encryptSecret, decryptSecret, type KeystoreKind } from "../keystore.js";
+import { mintToken } from "../mint.js";
+import { scopeFacts } from "../scopes.js";
 import type { BrowserKeystore } from "./keystore-idb.js";
 import type { BrowserProfileStore, BrowserTokenProfile } from "./profile-idb.js";
 

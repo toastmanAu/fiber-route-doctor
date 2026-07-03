@@ -14,11 +14,30 @@ export function openStore(): Promise<IDBDatabase> {
   });
 }
 
+/**
+ * request.onsuccess fires BEFORE the surrounding transaction commits. For reads that's
+ * harmless (nothing to lose), but for writes it means a save() could resolve and then the
+ * commit still aborts (quota/eviction), leaving the caller believing it persisted when it
+ * didn't. So: readonly resolves on request success; readwrite resolves on transaction
+ * completion (with the value captured from the request), and rejects on transaction
+ * error/abort so a failed commit surfaces as a rejected promise.
+ */
 function tx<T>(store: string, mode: IDBTransactionMode, run: (s: IDBObjectStore) => IDBRequest): Promise<T> {
   return openStore().then((db) => new Promise<T>((resolve, reject) => {
-    const request = run(db.transaction(store, mode).objectStore(store));
-    request.onsuccess = () => { db.close(); resolve(request.result as T); };
+    const transaction = db.transaction(store, mode);
+    const request = run(transaction.objectStore(store));
     request.onerror = () => { db.close(); reject(request.error); };
+
+    if (mode === "readonly") {
+      request.onsuccess = () => { db.close(); resolve(request.result as T); };
+      return;
+    }
+
+    let result: T;
+    request.onsuccess = () => { result = request.result as T; };
+    transaction.oncomplete = () => { db.close(); resolve(result); };
+    transaction.onerror = () => { db.close(); reject(transaction.error); };
+    transaction.onabort = () => { db.close(); reject(transaction.error); };
   }));
 }
 
