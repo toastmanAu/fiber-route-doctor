@@ -20,7 +20,7 @@ export interface RpcChannelInfo {
   node1: Hex;
   node2: Hex;
   capacity: Hex;                       // u128 hex
-  funding_udt_type_script: UdtScript | null;
+  udt_type_script: UdtScript | null;
   update_info_of_node1: RpcChannelUpdateInfo | null; // node1 -> node2
   update_info_of_node2: RpcChannelUpdateInfo | null; // node2 -> node1
 }

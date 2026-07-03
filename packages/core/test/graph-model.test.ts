@@ -11,7 +11,7 @@ const channels: RpcChannelInfo[] = [
     node1: "0xA",
     node2: "0xB",
     capacity: "0x64", // 100
-    funding_udt_type_script: null,
+    udt_type_script: null,
     update_info_of_node1: { timestamp: "0x1", enabled: true, fee_rate: "0xa", tlc_expiry_delta: "0x3e8", tlc_minimum_value: "0x1" },
     update_info_of_node2: { timestamp: "0x1", enabled: false, fee_rate: "0x14", tlc_expiry_delta: "0x3e8", tlc_minimum_value: "0x1" }
   }
@@ -45,5 +45,22 @@ describe("GraphModel.fromRpc", () => {
     expect(m.edgesTo("0xB")).toHaveLength(1);
     expect(m.allEdges()).toHaveLength(2);
     expect([...m.assetsOf("0xA")]).toEqual(["CKB"]);
+  });
+
+  it("does not crash on a real graph_channels RPC shape (udt_type_script, not funding_udt_type_script) and classifies it as CKB", () => {
+    const realShapeChannels: RpcChannelInfo[] = [
+      {
+        channel_outpoint: "0xchan2",
+        node1: "0xA",
+        node2: "0xB",
+        capacity: "0x64",
+        udt_type_script: null,
+        update_info_of_node1: { timestamp: "0x1", enabled: true, fee_rate: "0xa", tlc_expiry_delta: "0x3e8", tlc_minimum_value: "0x1" },
+        update_info_of_node2: null
+      }
+    ];
+    expect(() => GraphModel.fromRpc(nodes, realShapeChannels)).not.toThrow();
+    const m = GraphModel.fromRpc(nodes, realShapeChannels);
+    expect(m.edgesFrom("0xA")[0].asset).toBe("CKB");
   });
 });

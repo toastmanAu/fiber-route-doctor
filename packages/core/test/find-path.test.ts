@@ -5,7 +5,7 @@ function chan(op: string, a: string, b: string, feeAB: string, opts: Partial<{ e
   const u = { timestamp: "0x1", enabled: opts.enabled ?? true, fee_rate: feeAB, tlc_expiry_delta: "0x3e8", tlc_minimum_value: opts.min ?? "0x1", ...(opts.max ? { tlc_maximum_value: opts.max } : {}) };
   return {
     channel_outpoint: op, node1: a, node2: b, capacity: opts.cap ?? "0x3b9aca00",
-    funding_udt_type_script: opts.udt ? { code_hash: "0x11", hash_type: "type", args: "0x22" } : null,
+    udt_type_script: opts.udt ? { code_hash: "0x11", hash_type: "type", args: "0x22" } : null,
     update_info_of_node1: u,
     update_info_of_node2: { ...u, fee_rate: feeAB }
   };

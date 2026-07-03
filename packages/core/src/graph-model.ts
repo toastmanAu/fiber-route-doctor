@@ -39,7 +39,7 @@ export class GraphModel {
     };
 
     for (const c of channels) {
-      const asset = assetIdOf(c.funding_udt_type_script);
+      const asset = assetIdOf(c.udt_type_script ?? null);
       const capacity = bi(c.capacity);
       if (c.update_info_of_node1) {
         const e = makeEdge(c.channel_outpoint, c.node1, c.node2, asset, capacity, c.update_info_of_node1);
