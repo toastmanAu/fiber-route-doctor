@@ -17,8 +17,8 @@ export function openStore(): Promise<IDBDatabase> {
 function tx<T>(store: string, mode: IDBTransactionMode, run: (s: IDBObjectStore) => IDBRequest): Promise<T> {
   return openStore().then((db) => new Promise<T>((resolve, reject) => {
     const request = run(db.transaction(store, mode).objectStore(store));
-    request.onsuccess = () => resolve(request.result as T);
-    request.onerror = () => reject(request.error);
+    request.onsuccess = () => { db.close(); resolve(request.result as T); };
+    request.onerror = () => { db.close(); reject(request.error); };
   }));
 }
 
