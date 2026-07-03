@@ -5,6 +5,7 @@ import { buildRouteView } from "./route-view.js";
 import { RouteGraph } from "./RouteGraph.js";
 import { HealthPanel } from "./HealthPanel.js";
 import { LiquidityPanel } from "./LiquidityPanel.js";
+import { NetworkMapPanel } from "./NetworkMapPanel.js";
 
 export function App() {
   const [url, setUrl] = useState("http://127.0.0.1:8227");
@@ -43,6 +44,7 @@ export function App() {
       <pre style={{ background: "#111", color: "#0f0", padding: "1rem", marginTop: "1rem", whiteSpace: "pre-wrap" }}>{out}</pre>
       <HealthPanel />
       <LiquidityPanel />
+      <NetworkMapPanel routeOutpoints={report?.path.map((h) => h.channelOutpoint) ?? []} />
     </main>
   );
 }
