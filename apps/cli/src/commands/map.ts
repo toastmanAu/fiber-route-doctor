@@ -31,3 +31,59 @@ export function parseMapArgs(rest: string[]): MapArgs {
     height: parseDim("height", flags.get("height"), 800)
   };
 }
+
+import { readFileSync, writeFileSync } from "node:fs";
+import { homedir } from "node:os";
+import { join } from "node:path";
+import {
+  HealthClient, buildNetworkMapModel, computeLayout,
+  type RpcChannelInfo, type RpcGraphNode
+} from "@fiber-route-doctor/core";
+import { NodeFsTokenStore, resolveToken } from "@fiber-route-doctor/biscuit";
+import { renderMapHtml } from "../map-html.js";
+
+const PROFILES = join(homedir(), ".config", "fiber-route-doctor", "profiles.json");
+
+async function defaultFetchGraph(args: MapArgs): Promise<{ nodes: RpcGraphNode[]; channels: RpcChannelInfo[]; ownPubkey?: string }> {
+  const token = resolveToken({
+    authToken: args.biscuit,
+    authTokenFile: args.authTokenFile,
+    profile: args.profile,
+    env: process.env,
+    getProfileToken: (n) => new NodeFsTokenStore(PROFILES).get(n)?.token,
+    readFile: (p) => readFileSync(p, "utf8")
+  });
+  const client = new HealthClient({ url: args.url, biscuit: token });
+  const [nodes, channels] = await Promise.all([client.graphNodes(), client.graphChannels()]);
+  const ownPubkey = token ? await client.nodeInfo().then((n) => n.pubkey).catch(() => undefined) : undefined;
+  return { nodes, channels, ownPubkey };
+}
+
+export interface MapDeps {
+  fetchGraph?: (args: MapArgs) => Promise<{ nodes: RpcGraphNode[]; channels: RpcChannelInfo[]; ownPubkey?: string }>;
+  writeFile?: (path: string, content: string) => void;
+  print?: (s: string) => void;
+}
+
+export async function runMap(rest: string[], deps: MapDeps = {}): Promise<number> {
+  const print = deps.print ?? console.log;
+  let args: MapArgs;
+  try {
+    args = parseMapArgs(rest);
+  } catch (e) {
+    print(e instanceof Error ? e.message : String(e));
+    return 2;
+  }
+  const fetchGraph = deps.fetchGraph ?? defaultFetchGraph;
+  const writeFile = deps.writeFile ?? ((p: string, c: string) => writeFileSync(p, c));
+  const { nodes, channels, ownPubkey } = await fetchGraph(args);
+  const model = buildNetworkMapModel(nodes, channels, ownPubkey);
+  if (args.json) {
+    print(JSON.stringify(model, null, 2));
+    return 0;
+  }
+  const positions = computeLayout(model, { width: args.width, height: args.height });
+  writeFile(args.out, renderMapHtml(model, positions, { width: args.width, height: args.height }));
+  print(`wrote ${args.out} (${model.stats.nodeCount} nodes, ${model.stats.channelCount} channels)`);
+  return 0;
+}
