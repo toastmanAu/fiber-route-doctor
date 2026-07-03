@@ -1,7 +1,7 @@
 # Hosted Web Demo via GitHub Pages — Design
 
 **Date:** 2026-07-03
-**Status:** Drafted with best-judgment defaults (user AFK); awaiting review. Choices marked ★ are the ones to confirm.
+**Status:** Approved — GitHub Actions deploy, project-page URL, AND demo-mode fixture (user pulled demo mode into scope). Choices marked ★ confirmed.
 **Deliverable:** The fiber-route-doctor web app hosted at `https://toastmanau.github.io/fiber-route-doctor/`, auto-deployed on push to master — the hackathon's "hosted demo" line item.
 
 ## What the demo actually is (the one real design decision)
@@ -10,9 +10,11 @@ GitHub Pages serves over **HTTPS**. Two browser rules shape what a visitor can d
 - **Mixed content:** an HTTPS page's `fetch` to `http://…` is blocked — *except* `http://localhost` / `http://127.0.0.1`, which browsers treat as potentially-trustworthy and allow.
 - **CORS:** a cross-origin `fetch` needs the node to send `Access-Control-Allow-Origin`. fnn does not send CORS headers by default, so even a localhost node is typically CORS-blocked from the hosted page.
 
-Consequence, stated honestly: **the in-browser wallet is fully live with zero backend** — a visitor can create a wallet, mint a real scoped biscuit token, and inspect it, all client-side (crypto + IndexedDB). The node-querying panels (Diagnose / Health / Liquidity / Map) work only when pointed at a reachable, CORS-enabled node (e.g. a visitor running fnn locally with CORS on, or via the CLI). ★ **Scope: ship the real app as-is, add a short banner explaining this, and point visitors to the CLI + the standalone map HTML for live-data viewing.** No backend, no proxy, matches "keep it simple."
+Consequence: **the in-browser wallet is fully live with zero backend** — a visitor can create a wallet, mint a real scoped biscuit token, and inspect it, all client-side (crypto + IndexedDB). The node-querying panels can't reach a live node over the internet.
 
-A canned-snapshot "demo mode" (bundle real 246-node/650-channel testnet data so the Map/Liquidity panels render with no node) is the natural higher-impact follow-up — explicitly **out of scope** for this pass, noted below.
+**Demo mode closes that gap (in scope).** We bundle a real captured testnet snapshot (`graph_nodes` + `graph_channels` = 246-node / 650-channel topology, plus this node's `node_info`/`list_peers`/`list_channels`) and a `demoFetch` that serves it. A "Demo data" toggle makes the panels run their *entire real pipeline* (pagination, parsing, model building, layout, attribution) over the captured wire data — no node, no CORS, no fabrication. This turns the hosted page into a genuine working showcase: the Map renders the real 246/650 network; Diagnose finds a real route between two mega-hubs; the Health probe correctly diagnoses the (real, isolated) demo node; Liquidity honestly shows the demo node's empty own-channel set. The wallet remains live regardless. A short banner explains that live-node queries require the CLI or a CORS-enabled node, and the Demo toggle is the no-setup path.
+
+Honesty note: the snapshot is real captured data (v0.7.1 driveThree node, 2026-07-03), refreshable via a capture script — nothing is synthesized. The demo node being isolated is real and the tools reporting it accurately is itself part of the demonstration.
 
 ## Architecture (approved defaults)
 
@@ -28,14 +30,21 @@ A canned-snapshot "demo mode" (bundle real 246-node/650-channel testnet data so 
   - Concurrency group `pages` so overlapping pushes don't race.
   - Job: checkout → setup-node 22 → `npm ci` → `npm run build --workspace @fiber-route-doctor/web` → `actions/upload-pages-artifact` with `path: apps/web/dist` → `actions/deploy-pages`.
   - `permissions: { contents: read, pages: write, id-token: write }`.
-- **`apps/web/src/App.tsx`** (or a small `DemoBanner.tsx`) — a dismissible top banner shown only in production builds (`import.meta.env.PROD`): one sentence that the wallet is fully live in-browser, node panels need a CORS-enabled node, with links to the repo README (CLI usage) and the gap analysis. Keep it small and factual; no scope creep into the panels.
+- **`scripts/capture-demo-fixtures.mjs`** — env-gated (like the smokes): mints a readonly token, paginates `graph_nodes`/`graph_channels`, calls `node_info`/`list_peers`/`list_channels`, and writes the five captured JSON-RPC *result* payloads to `apps/web/src/demo/fixtures.json`. Reproducible/refreshable; not hand-pasted. The committed fixture is what CI builds.
+- **`apps/web/src/demo/fixtures.json`** — the committed snapshot (~680 KB; gzips small). Five keys: `graphNodes`, `graphChannels`, `nodeInfo`, `listPeers`, `listChannels`.
+- **`apps/web/src/demo/demo-fetch.ts`** (the feature core, unit-tested) — `demoFetch: typeof fetch` that reads the JSON-RPC `method` from the request body and returns the matching fixture in a `{ jsonrpc, id, result }` envelope. Returns the full arrays in a single page with no `last_cursor`, which the client's cursor loop correctly treats as the last page (a full page is exactly 500; 650 ≠ 500 → stop). Also exports `DEMO_SOURCE`/`DEMO_TARGET` (the two mega-hub pubkeys, degree ~540 each — a route provably exists) and `DEMO_AMOUNT` for prefilling Diagnose.
+- **Panel wiring** — `HealthPanel`/`LiquidityPanel`/`NetworkMapPanel` gain an optional `fetchOverride?: typeof fetch` prop; when set, each builds its `HealthClient`/`GraphClient` with `{ url, biscuit, fetchImpl: fetchOverride }` (url/token become irrelevant but harmless). `App.tsx`'s Diagnose `run()` uses `demoFetch` when demo mode is on and prefills source/target/amount from the demo constants.
+- **`apps/web/src/App.tsx`** — a "Demo data (real testnet snapshot — no node needed)" toggle near the top. When on, passes `fetchOverride={demoFetch}` to all three panels and drives Diagnose via `demoFetch` + prefilled hubs. Plus a small factual banner (shown in prod) that the wallet is fully live client-side, live-node queries need the CLI or a CORS-enabled node, and the Demo toggle is the zero-setup path — with links to the README and gap analysis.
 - **`README.md`** — add a "Live demo" line linking the Pages URL near the top, beside the gap-analysis link.
 
 ## Data flow
 
 ```
 push master → Actions: npm ci → build apps/web (base=/fiber-route-doctor/) → upload dist artifact → deploy-pages
-visitor → HTTPS page → wallet panel: 100% client-side (works) │ node panels: fetch(user node url) → works iff node is reachable + CORS-enabled
+visitor → HTTPS page →
+  wallet panel:      100% client-side (always works)
+  Demo data ON:      panels use demoFetch(fixtures) → real 246/650 pipeline, no node
+  Demo data OFF:     panels fetch(user node url) → works iff node reachable + CORS-enabled
 ```
 
 ## Error handling / edge cases
@@ -46,17 +55,18 @@ visitor → HTTPS page → wallet panel: 100% client-side (works) │ node panel
 
 ## Testing
 
-- Local: `npm run build --workspace @fiber-route-doctor/web` succeeds and `apps/web/dist/index.html` references `/fiber-route-doctor/assets/…` (the base-path assertion).
-- `npm run typecheck` + `npm test` unaffected (this change is build config + a banner; the banner is trivial JSX with no logic to unit-test — typecheck is the gate, consistent with the other panels).
-- Post-deploy manual check: load the Pages URL, confirm the app renders (not a blank/404), create a wallet, mint a token — the live client-side path, which is the demo's actual substance.
-- No new automated tests: this is deployment plumbing; the app's behavior is already covered by the existing 230-test suite.
+- **`demoFetch` unit tests** (the one piece with logic): dispatches on JSON-RPC method (node_info/list_peers/list_channels/graph_nodes/graph_channels) → correct fixture envelope; the graph methods return a single non-500-length page so the client's pagination loop terminates. **Integration assertion**: `buildNetworkMapModel` over data pulled through `new GraphClient({ url: "demo", fetchImpl: demoFetch })` yields 246 nodes / 650 channels, and `DEMO_SOURCE`/`DEMO_TARGET` both appear in the model (guarantees the Diagnose demo has real endpoints). This runs the real pipeline against the fixture, so it also guards the fixture staying parseable.
+- Base-path: `npm run build --workspace @fiber-route-doctor/web` succeeds and `apps/web/dist/index.html` references `/fiber-route-doctor/assets/…`.
+- `npm run typecheck` + full `npm test` green (existing 230 + the demoFetch tests).
+- Panels/App/banner are JSX wiring verified by typecheck (consistent with the other panels' testing posture); the `fetchOverride` seam is exercised by the demoFetch integration test.
+- Post-deploy manual check: load the Pages URL, toggle Demo data, confirm the Map renders 246 nodes and Diagnose finds a route; create a wallet and mint a token.
 
 ## Out of scope / backlog
 
-- Canned "demo mode" with bundled testnet snapshot data (the higher-impact follow-up — bundle a `graph_nodes`/`graph_channels` fixture + a toggle so Map/Liquidity render offline).
 - A CORS-proxy or hosted read-only node (a backend — explicitly rejected for "keep it simple").
-- Custom domain / CNAME.
-- Preview deploys per-PR.
+- Fabricated "healthy node" fixtures for Health/Liquidity — we show real captured data, isolated node and all.
+- Auto-refreshing the fixture on a schedule (it's captured once for the hackathon; the script makes a manual refresh a one-liner).
+- Custom domain / CNAME; per-PR preview deploys.
 
 ## One-time setup note
 
