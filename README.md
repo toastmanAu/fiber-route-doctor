@@ -98,6 +98,23 @@ up on the topology. Layout is deterministic (same graph → same map).
 
 Live validation: `FRD_BISCUIT_KEY=~/.fiber-dt/biscuit_private_key FIBER_RPC_URL=http://127.0.0.1:8231 npm run smoke:map`
 
+## In-browser wallet (Tier B)
+
+The web app carries its own biscuit keystore — no CLI needed to get a token into the
+panels. Create or import a wallet, and it is encrypted at rest in IndexedDB (scrypt +
+XChaCha20-Poly1305); the seed is decrypted only for the moment of a mint or export and
+never held in memory between operations (passphrase-per-operation custody).
+
+Mint a scoped token (readonly / invoicing / full), and it lands as a named profile that
+the Health, Liquidity, and Network Map panels can select from a dropdown. The 24-word
+seed is shown once at creation and only again behind an explicit passphrase-gated export.
+
+Known limitation: JavaScript strings cannot be securely zeroized, so the passphrase and
+decrypted seed live briefly on the JS heap during an operation — the same constraint as
+the CLI. This is a convenience keystore for testnet operation, not a hardware wallet.
+
+Live validation: `FIBER_RPC_URL=http://127.0.0.1:8231 npm run smoke:wallet`
+
 ## Live smoke
 See [docs/demo-node.md](docs/demo-node.md). Requires a reachable Fiber v0.9 node.
 

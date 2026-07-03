@@ -24,7 +24,8 @@
     "smoke:biscuit": "node --import tsx scripts/biscuit-live-smoke.mjs",
     "smoke:health": "node --import tsx scripts/health-live-smoke.mjs",
     "smoke:liquidity": "node --import tsx scripts/liquidity-live-smoke.mjs",
-    "smoke:map": "node --import tsx scripts/map-live-smoke.mjs"
+    "smoke:map": "node --import tsx scripts/map-live-smoke.mjs",
+    "smoke:wallet": "node --import tsx scripts/wallet-live-smoke.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.1.0",

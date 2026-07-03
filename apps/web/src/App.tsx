@@ -6,6 +6,8 @@ import { RouteGraph } from "./RouteGraph.js";
 import { HealthPanel } from "./HealthPanel.js";
 import { LiquidityPanel } from "./LiquidityPanel.js";
 import { NetworkMapPanel } from "./NetworkMapPanel.js";
+import { WalletProvider } from "./wallet-context.js";
+import { WalletPanel } from "./WalletPanel.js";
 
 export function App() {
   const [url, setUrl] = useState("http://127.0.0.1:8227");
@@ -32,19 +34,22 @@ export function App() {
   }
 
   return (
-    <main style={{ fontFamily: "monospace", maxWidth: 720, margin: "2rem auto" }}>
-      <h1>Fiber Route Doctor</h1>
-      {([["node url", url, setUrl], ["source pubkey", source, setSource], ["target pubkey", target, setTarget], ["amount", amount, setAmount], ["asset (blank=CKB)", asset, setAsset]] as const).map(([label, val, set]) => (
-        <div key={label} style={{ margin: "0.4rem 0" }}>
-          <label>{label}: <input value={val} onChange={(e) => set(e.target.value)} style={{ width: 420 }} /></label>
-        </div>
-      ))}
-      <button onClick={run} disabled={busy}>{busy ? "diagnosing…" : "Diagnose"}</button>
-      {report && <RouteGraph view={buildRouteView(report)} />}
-      <pre style={{ background: "#111", color: "#0f0", padding: "1rem", marginTop: "1rem", whiteSpace: "pre-wrap" }}>{out}</pre>
-      <HealthPanel />
-      <LiquidityPanel />
-      <NetworkMapPanel routeOutpoints={report?.path.map((h) => h.channelOutpoint) ?? []} />
-    </main>
+    <WalletProvider>
+      <main style={{ fontFamily: "monospace", maxWidth: 720, margin: "2rem auto" }}>
+        <WalletPanel />
+        <h1>Fiber Route Doctor</h1>
+        {([["node url", url, setUrl], ["source pubkey", source, setSource], ["target pubkey", target, setTarget], ["amount", amount, setAmount], ["asset (blank=CKB)", asset, setAsset]] as const).map(([label, val, set]) => (
+          <div key={label} style={{ margin: "0.4rem 0" }}>
+            <label>{label}: <input value={val} onChange={(e) => set(e.target.value)} style={{ width: 420 }} /></label>
+          </div>
+        ))}
+        <button onClick={run} disabled={busy}>{busy ? "diagnosing…" : "Diagnose"}</button>
+        {report && <RouteGraph view={buildRouteView(report)} />}
+        <pre style={{ background: "#111", color: "#0f0", padding: "1rem", marginTop: "1rem", whiteSpace: "pre-wrap" }}>{out}</pre>
+        <HealthPanel />
+        <LiquidityPanel />
+        <NetworkMapPanel routeOutpoints={report?.path.map((h) => h.channelOutpoint) ?? []} />
+      </main>
+    </WalletProvider>
   );
 }

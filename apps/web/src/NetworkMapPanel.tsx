@@ -1,12 +1,19 @@
 import React, { useMemo, useRef, useState } from "react";
 import { HealthClient, buildNetworkMapModel, computeLayout, type NetworkMapModel, type MapNode } from "@fiber-route-doctor/core";
 import { buildNetworkMapView } from "./network-map-view.js";
+import { useWallet } from "./wallet-context.js";
 
 const W = 900, H = 620;
 
 export function NetworkMapPanel({ routeOutpoints }: { routeOutpoints: string[] }) {
+  const { profiles } = useWallet();
   const [url, setUrl] = useState("http://127.0.0.1:8231");
   const [token, setToken] = useState("");
+
+  function applyProfile(name: string) {
+    const p = profiles.find((x) => x.name === name);
+    if (p) { setUrl(p.url); setToken(p.token); }
+  }
   const [model, setModel] = useState<NetworkMapModel | null>(null);
   const [selected, setSelected] = useState<MapNode | null>(null);
   const [error, setError] = useState("");
@@ -59,6 +66,14 @@ export function NetworkMapPanel({ routeOutpoints }: { routeOutpoints: string[] }
   return (
     <section style={{ marginTop: "2rem" }}>
       <h2>Network Map</h2>
+      {profiles.length > 0 && (
+        <div style={{ margin: "0.4rem 0" }}>
+          <label>profile: <select defaultValue="" onChange={(e) => applyProfile(e.target.value)}>
+            <option value="" disabled>— pick a minted token —</option>
+            {profiles.map((p) => <option key={p.name} value={p.name}>{p.name} ({p.scope})</option>)}
+          </select></label>
+        </div>
+      )}
       <div style={{ margin: "0.4rem 0" }}>
         <label>node url: <input value={url} onChange={(e) => setUrl(e.target.value)} style={{ width: 420 }} /></label>
       </div>
