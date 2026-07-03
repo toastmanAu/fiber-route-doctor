@@ -33,6 +33,10 @@ describe("buildNetworkMapModel", () => {
     const m = buildNetworkMapModel([], [gchan({ capacity: "0xffffffffffffffffff" })]);
     expect(m.edges[0].capacity).toBe("4722366482869645213695");
   });
+  it("normalizes empty-string node names to null", () => {
+    const m = buildNetworkMapModel([gnode("0xee", "")], []);
+    expect(m.nodes[0].name).toBeNull();
+  });
   it("ranks hubs by capacity, tie-broken by degree then pubkey, max 10, zero-degree excluded", () => {
     const chans = [
       gchan({ channel_outpoint: "0x1", node1: "0x01", node2: "0x02", capacity: "0x64" }), // 01:100, 02:100

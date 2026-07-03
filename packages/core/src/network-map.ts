@@ -11,7 +11,7 @@ function edgeDisabled(c: RpcChannelInfo): boolean {
 
 export function buildNetworkMapModel(graphNodes: RpcGraphNode[], graphChannels: RpcChannelInfo[], ownPubkey?: Hex): NetworkMapModel {
   const names = new Map<string, string | null>();
-  for (const n of graphNodes) names.set(n.pubkey, n.node_name ?? null);
+  for (const n of graphNodes) names.set(n.pubkey, n.node_name ? n.node_name : null);
   const degree = new Map<string, number>();
   const capacity = new Map<string, bigint>();
   let totalCapacity = 0n;

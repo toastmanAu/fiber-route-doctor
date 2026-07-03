@@ -40,4 +40,12 @@ describe("runMap", () => {
     expect(await runMap([], d)).toBe(2);
     expect(String(d.print.mock.calls[0][0])).toContain("--url");
   });
+  it("never leaks the biscuit token into the HTML or JSON output", async () => {
+    const d = deps();
+    await runMap(["--url", "http://n/", "--biscuit", "SECRET-TOKEN-123"], d);
+    expect(String(d.writeFile.mock.calls[0][1])).not.toContain("SECRET-TOKEN-123");
+    const d2 = deps();
+    await runMap(["--url", "http://n/", "--biscuit", "SECRET-TOKEN-123", "--json"], d2);
+    expect(String(d2.print.mock.calls[0][0])).not.toContain("SECRET-TOKEN-123");
+  });
 });
