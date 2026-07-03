@@ -4,5 +4,11 @@
   "type": "module",
   "main": "./src/index.ts",
   "exports": { ".": "./src/index.ts" },
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "d3-force": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/d3-force": "^3.0.10"
+  }
 }

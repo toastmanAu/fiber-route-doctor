@@ -10,6 +10,7 @@ import { runKeys } from "./commands/keys.js";
 import { runToken } from "./commands/token.js";
 import { runHealth } from "./commands/health.js";
 import { runLiquidity } from "./commands/liquidity.js";
+import { runMap } from "./commands/map.js";
 
 async function main() {
   const { command, rest } = parseCommand(process.argv.slice(2));
@@ -18,6 +19,7 @@ async function main() {
   if (command === "token") process.exit(await runToken(rest));
   if (command === "health") process.exit(await runHealth(rest));
   if (command === "liquidity") process.exit(await runLiquidity(rest));
+  if (command === "map") process.exit(await runMap(rest));
 
   const args = parseArgs(rest);
   const PROFILES = join(homedir(), ".config", "fiber-route-doctor", "profiles.json");

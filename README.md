@@ -77,6 +77,25 @@ asset totals without producing a per-channel balance delta.
 
 Live validation: `FRD_BISCUIT_KEY=~/.fiber-dt/biscuit_private_key FIBER_RPC_URL=http://127.0.0.1:8231 npm run smoke:liquidity`
 
+## Fiber Network Map
+
+The gossiped network topology as an interactive force-directed map — nodes sized by
+capacity, disabled channels dashed red, hubs ranked, your node highlighted.
+
+```bash
+# export a self-contained HTML map (no external assets — host or share the file)
+fiber-route-doctor map --profile driveThree --url http://127.0.0.1:8231 --out fiber-map.html
+
+# dump the raw model instead
+fiber-route-doctor map --profile driveThree --url http://127.0.0.1:8231 --json
+```
+
+The web app's Network Map panel is interactive (pan/zoom, click for node details) and
+overlays the most recent Diagnose route in gold — run a diagnosis, watch the path light
+up on the topology. Layout is deterministic (same graph → same map).
+
+Live validation: `FRD_BISCUIT_KEY=~/.fiber-dt/biscuit_private_key FIBER_RPC_URL=http://127.0.0.1:8231 npm run smoke:map`
+
 ## Live smoke
 See [docs/demo-node.md](docs/demo-node.md). Requires a reachable Fiber v0.9 node.
 
