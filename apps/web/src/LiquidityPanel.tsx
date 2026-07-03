@@ -1,10 +1,17 @@
 import React, { useState } from "react";
 import { HealthClient, buildLiquiditySnapshot, computeLiquidityReport } from "@fiber-route-doctor/core";
 import { buildLiquidityView, type LiquidityView } from "./liquidity-view.js";
+import { useWallet } from "./wallet-context.js";
 
 export function LiquidityPanel() {
+  const { profiles } = useWallet();
   const [url, setUrl] = useState("http://127.0.0.1:8231");
   const [token, setToken] = useState("");
+
+  function applyProfile(name: string) {
+    const p = profiles.find((x) => x.name === name);
+    if (p) { setUrl(p.url); setToken(p.token); }
+  }
   const [view, setView] = useState<LiquidityView | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -25,6 +32,14 @@ export function LiquidityPanel() {
   return (
     <section style={{ marginTop: "2rem" }}>
       <h2>Channel Liquidity</h2>
+      {profiles.length > 0 && (
+        <div style={{ margin: "0.4rem 0" }}>
+          <label>profile: <select defaultValue="" onChange={(e) => applyProfile(e.target.value)}>
+            <option value="" disabled>— pick a minted token —</option>
+            {profiles.map((p) => <option key={p.name} value={p.name}>{p.name} ({p.scope})</option>)}
+          </select></label>
+        </div>
+      )}
       <div style={{ margin: "0.4rem 0" }}>
         <label>node url: <input value={url} onChange={(e) => setUrl(e.target.value)} style={{ width: 420 }} /></label>
       </div>
