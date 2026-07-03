@@ -3,7 +3,7 @@ import { GraphModel, diagnose, CKB_ASSET, type ProbeRequest, type RpcChannelInfo
 
 function chan(op: string, a: string, b: string, fee: string): RpcChannelInfo {
   const u = { timestamp: "0x1", enabled: true, fee_rate: fee, tlc_expiry_delta: "0x3e8", tlc_minimum_value: "0x1" };
-  return { channel_outpoint: op, node1: a, node2: b, capacity: "0x3b9aca00", funding_udt_type_script: null, update_info_of_node1: u, update_info_of_node2: u };
+  return { channel_outpoint: op, node1: a, node2: b, capacity: "0x3b9aca00", udt_type_script: null, update_info_of_node1: u, update_info_of_node2: u };
 }
 const probe: ProbeRequest = { source: "0xA", target: "0xC", amount: 1_000_000n, asset: CKB_ASSET };
 // fee_rate 0x1 (1/thousand) keeps a 2-hop route's total fee (2) within the default 0.5% ceiling (5) so it stays payable

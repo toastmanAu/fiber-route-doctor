@@ -20,12 +20,12 @@ function mockFetchSequence(results: unknown[]) {
 }
 
 function stubChannel(i: number) {
-  return { channel_outpoint: `0x${i}`, node1: "0xA", node2: "0xB", capacity: "0x64", funding_udt_type_script: null, update_info_of_node1: null, update_info_of_node2: null };
+  return { channel_outpoint: `0x${i}`, node1: "0xA", node2: "0xB", capacity: "0x64", udt_type_script: null, update_info_of_node1: null, update_info_of_node2: null };
 }
 
 describe("GraphClient", () => {
   it("posts a graph_channels JSON-RPC call and returns the result array", async () => {
-    const fetchImpl = mockFetch([{ channel_outpoint: "0x1", node1: "0xA", node2: "0xB", capacity: "0x64", funding_udt_type_script: null, update_info_of_node1: null, update_info_of_node2: null }]);
+    const fetchImpl = mockFetch([{ channel_outpoint: "0x1", node1: "0xA", node2: "0xB", capacity: "0x64", udt_type_script: null, update_info_of_node1: null, update_info_of_node2: null }]);
     const client = new GraphClient({ url: "http://node.local/rpc", fetchImpl });
     const channels = await client.graphChannels();
     expect(channels).toHaveLength(1);

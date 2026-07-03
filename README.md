@@ -8,6 +8,8 @@ Infrastructure Hackathon (Category 2).
 
 **📋 Read the full [Fiber Infrastructure Gap Analysis & Roadmap](docs/GAP-ANALYSIS.md)** — every gap backed by a working tool and live-testnet proof.
 
+**🌐 [Live demo](https://toastmanau.github.io/fiber-route-doctor/)** — try the in-browser wallet, and toggle "Demo data" to explore a real 213-node / 650-channel testnet snapshot with no node.
+
 ## Packages
 - `@fiber-route-doctor/core` — UI-free engine (graph model, path finder, diagnosis).
 - `@fiber-route-doctor/cli` — operator command.

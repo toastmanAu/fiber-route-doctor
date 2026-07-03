@@ -11,8 +11,8 @@ function client(nodes: unknown, channels: unknown) {
 }
 const probe: ProbeRequest = { source: "0xA", target: "0xC", amount: 1_000_000n, asset: CKB_ASSET };
 const chans = [
-  { channel_outpoint: "0x1", node1: "0xA", node2: "0xB", capacity: "0x3b9aca00", funding_udt_type_script: null, update_info_of_node1: { timestamp: "0x1", enabled: true, fee_rate: "0x1", tlc_expiry_delta: "0x3e8", tlc_minimum_value: "0x1" }, update_info_of_node2: null },
-  { channel_outpoint: "0x2", node1: "0xB", node2: "0xC", capacity: "0x3b9aca00", funding_udt_type_script: null, update_info_of_node1: { timestamp: "0x1", enabled: true, fee_rate: "0x1", tlc_expiry_delta: "0x3e8", tlc_minimum_value: "0x1" }, update_info_of_node2: null }
+  { channel_outpoint: "0x1", node1: "0xA", node2: "0xB", capacity: "0x3b9aca00", udt_type_script: null, update_info_of_node1: { timestamp: "0x1", enabled: true, fee_rate: "0x1", tlc_expiry_delta: "0x3e8", tlc_minimum_value: "0x1" }, update_info_of_node2: null },
+  { channel_outpoint: "0x2", node1: "0xB", node2: "0xC", capacity: "0x3b9aca00", udt_type_script: null, update_info_of_node1: { timestamp: "0x1", enabled: true, fee_rate: "0x1", tlc_expiry_delta: "0x3e8", tlc_minimum_value: "0x1" }, update_info_of_node2: null }
 ];
 
 describe("orchestrator", () => {

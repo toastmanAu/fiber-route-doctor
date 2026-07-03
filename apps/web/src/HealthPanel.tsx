@@ -3,7 +3,7 @@ import { HealthClient, runHealthProbe } from "@fiber-route-doctor/core";
 import { buildHealthView, type HealthView } from "./health-view.js";
 import { useWallet } from "./wallet-context.js";
 
-export function HealthPanel() {
+export function HealthPanel({ fetchOverride }: { fetchOverride?: typeof fetch }) {
   const { profiles } = useWallet();
   const [url, setUrl] = useState("http://127.0.0.1:8231");
   const [token, setToken] = useState("");
@@ -23,7 +23,7 @@ export function HealthPanel() {
     setBusy(true);
     setError("");
     try {
-      const report = await runHealthProbe(new HealthClient({ url, biscuit: token || undefined }));
+      const report = await runHealthProbe(new HealthClient({ url, biscuit: token || undefined, fetchImpl: fetchOverride }));
       if (id !== runId.current) return;
       setView(buildHealthView(report));
     } catch (e) {
@@ -33,7 +33,7 @@ export function HealthPanel() {
     } finally {
       if (id === runId.current) setBusy(false);
     }
-  }, [url, token]);
+  }, [url, token, fetchOverride]);
 
   useEffect(() => {
     if (!auto) return;

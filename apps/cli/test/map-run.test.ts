@@ -4,7 +4,7 @@ import type { RpcChannelInfo, RpcGraphNode } from "@fiber-route-doctor/core";
 
 const NODES: RpcGraphNode[] = [{ pubkey: "0xaa", node_name: "alpha", addresses: [], timestamp: "0x1" }];
 const CHANNELS: RpcChannelInfo[] = [{
-  channel_outpoint: "0x1", node1: "0xaa", node2: "0xbb", capacity: "0x64", funding_udt_type_script: null,
+  channel_outpoint: "0x1", node1: "0xaa", node2: "0xbb", capacity: "0x64", udt_type_script: null,
   update_info_of_node1: { timestamp: "0x1", enabled: true, fee_rate: "0x1", tlc_expiry_delta: "0x1", tlc_minimum_value: "0x0" },
   update_info_of_node2: null
 }];
