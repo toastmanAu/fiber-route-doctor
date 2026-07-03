@@ -33,7 +33,7 @@ export function HealthPanel({ fetchOverride }: { fetchOverride?: typeof fetch })
     } finally {
       if (id === runId.current) setBusy(false);
     }
-  }, [url, token]);
+  }, [url, token, fetchOverride]);
 
   useEffect(() => {
     if (!auto) return;
