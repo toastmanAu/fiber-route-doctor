@@ -6,6 +6,8 @@ gossip graph, self-computing a constrained best path, and attributing any
 block to ranked causes and fixes. Built for the "Gone in 60ms" Fiber
 Infrastructure Hackathon (Category 2).
 
+**📋 Read the full [Fiber Infrastructure Gap Analysis & Roadmap](docs/GAP-ANALYSIS.md)** — every gap backed by a working tool and live-testnet proof.
+
 ## Packages
 - `@fiber-route-doctor/core` — UI-free engine (graph model, path finder, diagnosis).
 - `@fiber-route-doctor/cli` — operator command.
