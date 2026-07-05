@@ -74,8 +74,7 @@ export function NetworkMapPanel({ routeOutpoints, fetchOverride }: { routeOutpoi
   function onPointerUp() { drag.current = null; }
 
   return (
-    <section style={{ marginTop: "2rem" }}>
-      <h2>Network Map</h2>
+    <section style={{ marginTop: "0.25rem" }}>
       {profiles.length > 0 && (
         <div style={{ margin: "0.4rem 0" }}>
           <label>profile: <select defaultValue="" onChange={(e) => applyProfile(e.target.value)}>

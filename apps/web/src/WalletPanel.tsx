@@ -56,7 +56,6 @@ export function WalletPanel() {
 
   return (
     <section style={{ marginBottom: "2rem", border: "1px solid #444", padding: "1rem" }}>
-      <h2>Wallet</h2>
       {error && <pre style={{ color: "#e74c3c" }}>{error}</pre>}
       {reveal && (
         <div style={{ border: "1px solid #f1c40f", padding: "0.6rem", margin: "0.6rem 0" }}>
