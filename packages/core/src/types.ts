@@ -13,7 +13,8 @@ export interface RpcChannelUpdateInfo {
   fee_rate: Hex;           // u64 hex
   tlc_expiry_delta: Hex;   // u64 hex, milliseconds
   tlc_minimum_value: Hex;  // u128 hex
-  tlc_maximum_value?: Hex; // u128 hex, optional
+  tlc_maximum_value?: Hex; // u128 hex; pre-0.9 nodes only — absent on fnn >= 0.9
+  outbound_liquidity?: Hex | null; // u128 hex; fnn >= 0.9 (replaces tlc_maximum_value)
 }
 export interface RpcChannelInfo {
   channel_outpoint: Hex;

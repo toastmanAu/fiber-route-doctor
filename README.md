@@ -115,7 +115,8 @@ Known limitation: JavaScript strings cannot be securely zeroized, so the passphr
 decrypted seed live briefly on the JS heap during an operation — the same constraint as
 the CLI. This is a convenience keystore for testnet operation, not a hardware wallet.
 
-Live validation: `FIBER_RPC_URL=http://127.0.0.1:8231 npm run smoke:wallet`
+Live validation: `FRD_BISCUIT_KEY=~/.fiber-dt/biscuit_private_key FIBER_RPC_URL=http://127.0.0.1:8231 npm run smoke:wallet`
+(asserts a stranger-key token is rejected AND an imported-node-key token is accepted)
 
 ## Live smoke
 See [docs/demo-node.md](docs/demo-node.md). Requires a reachable Fiber v0.9 node.

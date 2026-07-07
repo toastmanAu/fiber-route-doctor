@@ -9,7 +9,11 @@ async function rpc(method: string): Promise<unknown> {
 
 describe("demoFetch", () => {
   it("serves each RPC method's fixture in a JSON-RPC envelope", async () => {
-    expect((await rpc("graph_nodes") as { nodes: unknown[] }).nodes.length).toBeGreaterThan(200);
+    // Node floor is modest: fnn >= 0.9 with a fresh store only holds currently
+    // re-broadcasting node announcements (~47 at capture), not weeks of stale ones.
+    expect((await rpc("graph_nodes") as { nodes: unknown[] }).nodes.length).toBeGreaterThan(40);
+    // Channel floor > 500 doubles as the pagination guard: a single-page
+    // truncation at GRAPH_PAGE_LIMIT=500 would fail this.
     expect((await rpc("graph_channels") as { channels: unknown[] }).channels.length).toBeGreaterThan(600);
     expect((await rpc("node_info") as { version: string }).version).toBeTruthy();
     expect((await rpc("list_peers") as { peers: unknown[] }).peers).toBeInstanceOf(Array);
@@ -24,7 +28,8 @@ describe("demoFetch", () => {
     const [nodes, channels] = await Promise.all([client.graphNodes(), client.graphChannels()]);
     const m = buildNetworkMapModel(nodes, channels);
     expect(m.stats.channelCount).toBeGreaterThan(600);
-    expect(m.stats.nodeCount).toBeGreaterThan(200);
+    // Map nodes = channel endpoints (announced + unannounced), so > announced count.
+    expect(m.stats.nodeCount).toBeGreaterThan(100);
     // demo route endpoints are real nodes in the model
     const keys = new Set(m.nodes.map((n) => n.pubkey));
     expect(keys.has(DEMO_SOURCE)).toBe(true);
