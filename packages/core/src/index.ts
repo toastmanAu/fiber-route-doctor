@@ -10,6 +10,7 @@ export * from "./health-types.js";
 export * from "./health-client.js";
 export * from "./channel-types.js";
 export * from "./channel-client.js";
+export * from "./channel-watch.js";
 export * from "./health-checks.js";
 export * from "./health.js";
 export * from "./health-format.js";
