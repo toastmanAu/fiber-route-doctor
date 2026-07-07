@@ -1,5 +1,5 @@
-export type Command = "diagnose" | "keys" | "token" | "health" | "liquidity" | "map";
-const COMMANDS: Command[] = ["diagnose", "keys", "token", "health", "liquidity", "map"];
+export type Command = "diagnose" | "keys" | "token" | "health" | "liquidity" | "map" | "channel";
+const COMMANDS: Command[] = ["diagnose", "keys", "token", "health", "liquidity", "map", "channel"];
 
 export function parseCommand(argv: string[]): { command: Command; rest: string[] } {
   const first = argv[0];

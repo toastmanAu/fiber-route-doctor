@@ -28,7 +28,7 @@ async function withSecret<T>(ks: BrowserKeystore, passphrase: string, run: (secr
   return run(secret, file.kind);
 }
 
-const MINT_SCOPES: ReadonlyArray<MintRequest["scope"]> = ["readonly", "invoicing", "full"];
+const MINT_SCOPES: ReadonlyArray<MintRequest["scope"]> = ["readonly", "invoicing", "operator", "full"];
 
 export async function createWallet(ks: BrowserKeystore, passphrase: string): Promise<{ mnemonic: string; publicKeyString: string }> {
   const mnemonic = newMnemonic();
@@ -46,7 +46,7 @@ export async function importWallet(ks: BrowserKeystore, secret: string, kind: Ke
 
 export interface MintRequest {
   passphrase: string;
-  scope: "readonly" | "invoicing" | "full";
+  scope: "readonly" | "invoicing" | "operator" | "full";
   expiryDays: number;
   url: string;
   profileName: string;

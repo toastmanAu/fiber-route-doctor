@@ -22,6 +22,7 @@
     "typecheck": "npm run typecheck:core && npm run typecheck:cli && npm run typecheck:web && npm run typecheck:biscuit",
     "smoke:live": "node --import tsx scripts/live-smoke.mjs",
     "smoke:biscuit": "node --import tsx scripts/biscuit-live-smoke.mjs",
+    "smoke:channel": "node --import tsx scripts/channel-live-smoke.mjs",
     "smoke:health": "node --import tsx scripts/health-live-smoke.mjs",
     "smoke:liquidity": "node --import tsx scripts/liquidity-live-smoke.mjs",
     "smoke:map": "node --import tsx scripts/map-live-smoke.mjs",

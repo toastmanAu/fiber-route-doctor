@@ -118,6 +118,23 @@ the CLI. This is a convenience keystore for testnet operation, not a hardware wa
 Live validation: `FRD_BISCUIT_KEY=~/.fiber-dt/biscuit_private_key FIBER_RPC_URL=http://127.0.0.1:8231 npm run smoke:wallet`
 (asserts a stranger-key token is rejected AND an imported-node-key token is accepted)
 
+## Channel Manager (CLI + web)
+
+Manage channels on your own node with an `operator`-scoped token (readonly + write("channels") + write("peers")):
+
+    fiber-route-doctor token generate --scope operator --profile op --url http://127.0.0.1:8231
+    fiber-route-doctor channel connect --url http://127.0.0.1:8231 --profile op --address /ip4/../tcp/8228/p2p/..
+    fiber-route-doctor channel open    --url http://127.0.0.1:8231 --profile op --pubkey 0x02.. --amount 500
+    fiber-route-doctor channel watch   --url http://127.0.0.1:8231 --profile op --channel-id 0x.. --pubkey 0x02..
+    fiber-route-doctor channel update  --url http://127.0.0.1:8231 --profile op --channel-id 0x.. --fee-rate 1500
+    fiber-route-doctor channel close   --url http://127.0.0.1:8231 --profile op --channel-id 0x..
+
+Force-close requires `--force --yes-force`. The web panel mirrors this flow; in hosted demo
+mode it runs a clearly-badged in-browser simulator (states march to ChannelReady per poll).
+
+Live validation: `FRD_BISCUIT_KEY=... FIBER_RPC_URL=... FRD_PEER_ADDR=... npm run smoke:channel`
+(never funds a channel — asserts authorization + clean rejection of an absurd open).
+
 ## Live smoke
 See [docs/demo-node.md](docs/demo-node.md). Requires a reachable Fiber v0.9 node.
 
