@@ -11,6 +11,7 @@ import { runToken } from "./commands/token.js";
 import { runHealth } from "./commands/health.js";
 import { runLiquidity } from "./commands/liquidity.js";
 import { runMap } from "./commands/map.js";
+import { runChannel } from "./commands/channel.js";
 
 async function main() {
   const { command, rest } = parseCommand(process.argv.slice(2));
@@ -20,6 +21,7 @@ async function main() {
   if (command === "health") process.exit(await runHealth(rest));
   if (command === "liquidity") process.exit(await runLiquidity(rest));
   if (command === "map") process.exit(await runMap(rest));
+  if (command === "channel") process.exit(await runChannel(rest));
 
   const args = parseArgs(rest);
   const PROFILES = join(homedir(), ".config", "fiber-route-doctor", "profiles.json");
