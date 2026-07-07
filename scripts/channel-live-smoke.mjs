@@ -21,7 +21,8 @@ try {
   await client.connectPeer({ address: peer });
   console.log("connect_peer: accepted");
 } catch (e) {
-  if (e instanceof RpcMethodError && e.code === -32999) { console.error("FAIL: operator token unauthorized on connect_peer"); process.exit(1); }
+  if (!(e instanceof RpcMethodError)) { console.error(`FAIL: transport error, nothing proven: ${e}`); process.exit(1); }
+  if (e.code === -32999) { console.error("FAIL: operator token unauthorized on connect_peer"); process.exit(1); }
   console.log(`connect_peer: authorized (node reported: ${e.message ?? e})`);
 }
 
@@ -31,7 +32,8 @@ try {
   console.error("FAIL: absurd open_channel unexpectedly succeeded");
   process.exit(1);
 } catch (e) {
-  if (e instanceof RpcMethodError && e.code === -32999) { console.error("FAIL: operator token unauthorized on open_channel"); process.exit(1); }
+  if (!(e instanceof RpcMethodError)) { console.error(`FAIL: transport error, nothing proven: ${e}`); process.exit(1); }
+  if (e.code === -32999) { console.error("FAIL: operator token unauthorized on open_channel"); process.exit(1); }
   console.log(`open_channel(absurd): rejected cleanly — ${e.message ?? e}`);
 }
 console.log("OK: operator write path authorized end-to-end; nothing was funded");

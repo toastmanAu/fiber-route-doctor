@@ -35,7 +35,7 @@ describe("parseChannelArgs", () => {
     expect(() => parseChannelArgs(["update", "--url", "http://n", "--channel-id", "0xc1"]))
       .toThrow(/at least one of/);
     const a = parseChannelArgs(["update", "--url", "http://n", "--channel-id", "0xc1", "--fee-rate", "1500"]);
-    expect(a.feeRatePpmHex).toBe("0x5dc");
+    expect(a.feeRateHex).toBe("0x5dc");
   });
   it("rejects unknown subcommands", () => {
     expect(() => parseChannelArgs(["explode", "--url", "http://n"])).toThrow(/unknown channel subcommand/);

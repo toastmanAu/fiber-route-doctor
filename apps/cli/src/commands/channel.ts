@@ -11,7 +11,7 @@ export interface ChannelArgs {
   sub: ChannelSub;
   url: string; biscuit?: string; profile?: string; authTokenFile?: string; json: boolean;
   address?: string; pubkey?: string; save: boolean;
-  fundingAmountHex?: string; isPrivate: boolean; feeRatePpmHex?: string;
+  fundingAmountHex?: string; isPrivate: boolean; feeRateHex?: string;
   channelId?: string; enable?: boolean; force: boolean;
   maxPolls: number; intervalSeconds: number;
 }
@@ -50,8 +50,8 @@ export function parseChannelArgs(rest: string[]): ChannelArgs {
   if (!Number.isInteger(args.intervalSeconds) || args.intervalSeconds < 1) throw new Error("--interval must be a positive integer (seconds)");
   const feeRate = flags.get("fee-rate");
   if (feeRate !== undefined) {
-    if (!/^\d+$/.test(feeRate)) throw new Error("--fee-rate must be a non-negative integer (ppm)");
-    args.feeRatePpmHex = `0x${BigInt(feeRate).toString(16)}`;
+    if (!/^\d+$/.test(feeRate)) throw new Error("--fee-rate must be a non-negative integer (ppm for open/update; shannons/KB for close)");
+    args.feeRateHex = `0x${BigInt(feeRate).toString(16)}`;
   }
   if (bools.has("enable") && bools.has("disable")) throw new Error("--enable and --disable are mutually exclusive");
   if (bools.has("enable")) args.enable = true;
@@ -69,7 +69,7 @@ export function parseChannelArgs(rest: string[]): ChannelArgs {
     }
     case "update":
       if (!args.channelId) throw new Error("update requires --channel-id");
-      if (args.enable === undefined && args.feeRatePpmHex === undefined) throw new Error("update requires at least one of --enable/--disable/--fee-rate");
+      if (args.enable === undefined && args.feeRateHex === undefined) throw new Error("update requires at least one of --enable/--disable/--fee-rate");
       break;
     case "close":
       if (!args.channelId) throw new Error("close requires --channel-id");
@@ -114,7 +114,7 @@ export async function runChannel(rest: string[], deps: ChannelDeps = {}): Promis
         const r = await client.openChannel({
           pubkey: args.pubkey!, funding_amount: args.fundingAmountHex!,
           public: args.isPrivate ? false : undefined,
-          tlc_fee_proportional_millionths: args.feeRatePpmHex
+          tlc_fee_proportional_millionths: args.feeRateHex
         });
         console.log(args.json ? JSON.stringify(r) : `OK: negotiation started — temporary_channel_id ${r.temporary_channel_id}\n(watch it: channel watch --url ${args.url} --channel-id ${r.temporary_channel_id} --pubkey ${args.pubkey})`);
         return 0;
@@ -125,11 +125,11 @@ export async function runChannel(rest: string[], deps: ChannelDeps = {}): Promis
         return 0;
       }
       case "update":
-        await client.updateChannel({ channel_id: args.channelId!, enabled: args.enable, tlc_fee_proportional_millionths: args.feeRatePpmHex });
+        await client.updateChannel({ channel_id: args.channelId!, enabled: args.enable, tlc_fee_proportional_millionths: args.feeRateHex });
         console.log(args.json ? JSON.stringify({ ok: true }) : "OK: update_channel accepted");
         return 0;
       case "close":
-        await client.shutdownChannel({ channel_id: args.channelId!, fee_rate: args.feeRatePpmHex, force: args.force || undefined });
+        await client.shutdownChannel({ channel_id: args.channelId!, fee_rate: args.feeRateHex, force: args.force || undefined });
         console.log(args.json ? JSON.stringify({ ok: true }) : `OK: shutdown_channel accepted${args.force ? " (FORCE)" : ""}`);
         return 0;
       case "watch": {

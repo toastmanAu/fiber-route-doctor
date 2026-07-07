@@ -68,6 +68,7 @@ export function ChannelPanel({ fetchOverride, demoActive }: ChannelPanelProps) {
   });
   const doUpdate = (c: RpcChannel, enabled?: boolean) => guard(async () => {
     const fee = feeDraft[c.channel_id]?.trim();
+    if (enabled === undefined && fee && !/^\d+$/.test(fee)) { setError("fee must be a non-negative integer (ppm)"); return; }
     await makeClient().updateChannel({
       channel_id: c.channel_id, enabled,
       tlc_fee_proportional_millionths: fee && /^\d+$/.test(fee) ? `0x${BigInt(fee).toString(16)}` : undefined
