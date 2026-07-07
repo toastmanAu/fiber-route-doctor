@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { type RouteReport } from "@fiber-route-doctor/core";
 import { HealthPanel } from "./HealthPanel.js";
 import { LiquidityPanel } from "./LiquidityPanel.js";
@@ -6,7 +6,9 @@ import { NetworkMapPanel } from "./NetworkMapPanel.js";
 import { DiagnosePanel } from "./DiagnosePanel.js";
 import { WalletProvider } from "./wallet-context.js";
 import { WalletPanel } from "./WalletPanel.js";
+import { ChannelPanel } from "./ChannelPanel.js";
 import { demoFetch } from "./demo/demo-fetch.js";
+import { makeChannelSimFetch } from "./demo/channel-sim.js";
 import { SectionHero } from "./SectionHero.js";
 import heroMasthead from "./assets/hero-masthead.webp";
 import heroWallet from "./assets/hero-wallet.webp";
@@ -19,6 +21,7 @@ export function App() {
   const [report, setReport] = useState<RouteReport | null>(null);
   const [demo, setDemo] = useState(false);
   const fetchOverride = demo ? demoFetch : undefined;
+  const channelFetchOverride = useMemo(() => (demo ? makeChannelSimFetch(demoFetch) : undefined), [demo]);
 
   return (
     <WalletProvider>
@@ -38,6 +41,8 @@ export function App() {
         </label>
         <SectionHero image={heroWallet} heading="Wallet" color="#2ecc71" align="right" />
         <WalletPanel />
+        <h2 style={{ fontFamily: "monospace", letterSpacing: "0.05em", borderBottom: "1px solid #3498db", paddingBottom: "0.3rem", marginTop: "2rem" }}>Channels</h2>
+        <ChannelPanel fetchOverride={channelFetchOverride} demoActive={demo} />
         <SectionHero image={heroDiagnose} heading="Diagnose" color="#f1c40f" align="lower" />
         <DiagnosePanel fetchOverride={fetchOverride} demoActive={demo} onReport={setReport} />
         <SectionHero image={heroHealth} heading="Node Health" color="#2ecc71" align="left" />
