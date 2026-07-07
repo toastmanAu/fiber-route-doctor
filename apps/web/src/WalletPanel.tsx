@@ -17,7 +17,7 @@ export function WalletPanel() {
   const [importText, setImportText] = useState("");
   const [importKind, setImportKind] = useState<"mnemonic" | "privatekey">("mnemonic");
   const [showImport, setShowImport] = useState(false);
-  const [scope, setScope] = useState<"readonly" | "invoicing" | "full">("readonly");
+  const [scope, setScope] = useState<"readonly" | "invoicing" | "operator" | "full">("readonly");
   const [expiryDays, setExpiryDays] = useState("30");
   const [url, setUrl] = useState("http://127.0.0.1:8231");
   const [profileName, setProfileName] = useState("dt");
@@ -86,7 +86,7 @@ export function WalletPanel() {
           <h3>Mint token</h3>
           <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", alignItems: "center" }}>
             <select value={scope} onChange={(e) => setScope(e.target.value as typeof scope)}>
-              <option value="readonly">readonly</option><option value="invoicing">invoicing</option><option value="full">full</option>
+              <option value="readonly">readonly</option><option value="invoicing">invoicing</option><option value="operator">operator</option><option value="full">full</option>
             </select>
             <label>expiry days <input value={expiryDays} onChange={(e) => setExpiryDays(e.target.value)} style={{ width: 50 }} /></label>
             <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="node url" style={{ width: 220 }} />

@@ -18,7 +18,7 @@ export function parseExpiry(s: string): Date {
   return new Date(Date.now() + ms);
 }
 
-const SCOPES: ScopeTemplate[] = ["readonly", "invoicing", "full"];
+const SCOPES: ScopeTemplate[] = ["readonly", "invoicing", "operator", "full"];
 
 export function parseScope(s: string): ScopeTemplate {
   if ((SCOPES as string[]).includes(s)) return s as ScopeTemplate;
