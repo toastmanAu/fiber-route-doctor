@@ -20,6 +20,7 @@
     "typecheck:web": "tsc -p apps/web/tsconfig.json --noEmit",
     "typecheck:biscuit": "tsc -p packages/biscuit/tsconfig.json --noEmit",
     "typecheck": "npm run typecheck:core && npm run typecheck:cli && npm run typecheck:web && npm run typecheck:biscuit",
+    "smoke:pwa": "node scripts/pwa-smoke.mjs",
     "smoke:live": "node --import tsx scripts/live-smoke.mjs",
     "smoke:biscuit": "node --import tsx scripts/biscuit-live-smoke.mjs",
     "smoke:channel": "node --import tsx scripts/channel-live-smoke.mjs",
