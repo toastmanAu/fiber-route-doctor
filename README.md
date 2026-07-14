@@ -8,12 +8,13 @@ Infrastructure Hackathon (Category 2).
 
 **📋 Read the full [Fiber Infrastructure Gap Analysis & Roadmap](docs/GAP-ANALYSIS.md)** — every gap backed by a working tool and live-testnet proof.
 
-**🌐 [Live demo](https://toastmanau.github.io/fiber-route-doctor/)** — try the in-browser wallet, and toggle "Demo data" to explore a real 213-node / 650-channel testnet snapshot with no node.
+**🌐 [Live demo](https://toastmanau.github.io/fiber-route-doctor/)** — try the in-browser wallet, and toggle "Demo data" to explore a real testnet snapshot (hundreds of live channels) with no node. It's an installable PWA: after one visit, demo mode — including the wasm biscuit crypto — works fully offline.
 
 ## Packages
-- `@fiber-route-doctor/core` — UI-free engine (graph model, path finder, diagnosis).
+- `@fiber-route-doctor/core` — UI-free engine (graph model, path finder, diagnosis, health/liquidity/map/channel clients).
+- `@fiber-route-doctor/biscuit` — key custody + scoped biscuit token minting (the piece fnn doesn't ship).
 - `@fiber-route-doctor/cli` — operator command.
-- `@fiber-route-doctor/web` — hosted demo.
+- `@fiber-route-doctor/web` — hosted demo (offline-capable PWA).
 
 ## Quick start
 ```
@@ -32,6 +33,28 @@ Add `--router` to cross-check against the node's own `build_router`.
 ```
 npm --workspace @fiber-route-doctor/web run dev
 ```
+
+## Biscuit Key & Token Manager
+
+fnn mandates biscuit auth on any public RPC listener but ships no way to mint tokens.
+This fills the gap: BIP39 mnemonic → SLIP-0010 Ed25519 → biscuit key, encrypted at rest
+(scrypt + XChaCha20-Poly1305), with scoped token minting.
+
+```bash
+# new key (prints recovery phrase once + the pubkey for your node's rpc.biscuit_public_key)
+fiber-route-doctor keys init --passphrase <pass>          # or FRD_PASSPHRASE env
+
+# or adopt an existing node key
+fiber-route-doctor keys import --hex ~/.fiber-dt/biscuit_private_key
+
+# mint a scoped token, saved as a named profile every other command can use
+fiber-route-doctor token generate --scope readonly --expiry 30d --profile dt \
+  --url http://127.0.0.1:8231
+```
+
+Scopes: `readonly` (graph/health/liquidity/map), `invoicing`, `operator`
+(readonly + channel/peer management), `full`. Tokens are minted offline —
+no round-trip to the node.
 
 ## Node Health Probe
 
@@ -107,7 +130,7 @@ panels. Create or import a wallet, and it is encrypted at rest in IndexedDB (scr
 XChaCha20-Poly1305); the seed is decrypted only for the moment of a mint or export and
 never held in memory between operations (passphrase-per-operation custody).
 
-Mint a scoped token (readonly / invoicing / full), and it lands as a named profile that
+Mint a scoped token (readonly / invoicing / operator / full), and it lands as a named profile that
 the Health, Liquidity, and Network Map panels can select from a dropdown. The 24-word
 seed is shown once at creation and only again behind an explicit passphrase-gated export.
 
@@ -137,6 +160,9 @@ Live validation: `FRD_BISCUIT_KEY=... FIBER_RPC_URL=... FRD_PEER_ADDR=... npm ru
 
 ## Live smoke
 See [docs/demo-node.md](docs/demo-node.md). Requires a reachable Fiber v0.9 node.
+`npm run smoke:pwa` verifies the web build is installable + offline-capable
+(manifest, icons, service-worker precache incl. the wasm bundle); it also runs in CI
+before every Pages deploy.
 
 ## What it fills
 Fiber ships `build_router` but gives no explanation when routing fails.
